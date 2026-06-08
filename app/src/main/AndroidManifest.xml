@@ -39,6 +39,12 @@
             android:documentLaunchMode="always"
             android:resizeableActivity="true"/>
 
+        <activity
+            android:name=".TrampolineActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
         <service
             android:name=".service.BubbleNotificationListenerService"
             android:label="@string/notification_listener_label"

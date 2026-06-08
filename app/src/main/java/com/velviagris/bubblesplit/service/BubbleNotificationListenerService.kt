@@ -96,8 +96,6 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                AppUtils.setAutoLaunchTarget(pkg, 10000L)
-
                 val originalContentIntent = notification.contentIntent
 
                 updateMainBubble(pkg, appName, title, text, originalContentIntent, isUpdate = !isNewMessage, isTakeOver = isTakeOver)
@@ -134,7 +132,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         isUpdate: Boolean,
         isTakeOver: Boolean
     ) {
-        val channelId = if (isTakeOver && !isUpdate) {
+        val channelId = if (!isUpdate) {
             AppUtils.BUBBLE_CHANNEL_ALERT_ID
         } else {
             AppUtils.BUBBLE_CHANNEL_SILENT_ID
@@ -156,7 +154,11 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .build()
 
         // 气泡行为意图 / Bubble action intent: open BubbleActivity as the split-screen console.
-        val targetIntent = Intent(this, BubbleActivity::class.java)
+        val targetIntent = Intent(this, BubbleActivity::class.java).apply {
+            putExtra("EXTRA_PACKAGE_NAME", pkg)
+            putExtra("EXTRA_TITLE", title)
+            putExtra("EXTRA_TEXT", text)
+        }
         val bubbleIntent = PendingIntent.getActivity(
             this, 0, targetIntent,
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -165,6 +167,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
             .setDesiredHeight(600)
             .setAutoExpandBubble(false) // 默认不强行弹脸 / Let Android decide when to expand.
+            .setSuppressNotification(false) // 确保不抑制通知显示 / Ensure notification is not suppressed.
             .build()
 
         val shortcutIntent = Intent(this, MainActivity::class.java).apply { action = Intent.ACTION_MAIN }
@@ -198,6 +201,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .setShortcutId(shortcutId)
             .addPerson(chatPartner)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
             .setOnlyAlertOnce(isUpdate) // 更新时静默 / Quietly update repeated messages.
             .setAutoCancel(true)        // 点击后清除通知 / Clear after tapping the notification.
 
