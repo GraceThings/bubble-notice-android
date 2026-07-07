@@ -85,7 +85,7 @@ class BubbleActivity : ComponentActivity() {
                                     if (launchIntent != null) {
                                         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         coroutineScope.launch {
-                                            kotlinx.coroutines.delay(150) // Wait for bubble expansion animation to finish
+                                            kotlinx.coroutines.delay(50) // Wait for bubble expansion animation to finish
                                             try {
                                                 startActivity(launchIntent)
                                                 moveTaskToBack(true)
@@ -202,7 +202,7 @@ class BubbleActivity : ComponentActivity() {
                     SenderGroup(
                         packageName = key.first,
                         senderName = key.second,
-                        messages = sortedMsgs,
+                        messages = sortedMsgs.take(3),
                         latestTimestamp = latestTimestamp
                     )
                 }
@@ -273,6 +273,7 @@ class BubbleActivity : ComponentActivity() {
                                 if (launchIntent != null) {
                                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     context.startActivity(launchIntent)
+                                    UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
                                     (context as? android.app.Activity)?.moveTaskToBack(true)
                                 }
                             },
