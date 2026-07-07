@@ -20,45 +20,10 @@ object AppUtils {
     private const val PREFS_NAME = "bubble_prefs"
     private const val KEY_SELECTED_APPS = "selected_apps"
     private const val KEY_TAKE_OVER_NOTIFICATIONS = "take_over_notifications"
-    private const val KEY_LAUNCH_MODE = "launch_mode"
-    private const val KEY_FREEFORM_WIDTH_RATIO = "freeform_width_ratio"
-    private const val KEY_FREEFORM_HEIGHT_RATIO = "freeform_height_ratio"
+    private const val KEY_AUTO_JUMP = "auto_jump_enabled"
 
-    // 读取当前启动模式 / Read current launch mode (split or freeform).
-    fun getLaunchMode(context: Context): String {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_LAUNCH_MODE, "split") ?: "split"
-    }
-
-    // 保存当前启动模式 / Save launch mode.
-    fun setLaunchMode(context: Context, mode: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_LAUNCH_MODE, mode).apply()
-    }
-
-    fun getFreeformWidthRatio(context: Context): Int {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getInt(KEY_FREEFORM_WIDTH_RATIO, 60)
-    }
-
-    fun setFreeformWidthRatio(context: Context, ratio: Int) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putInt(KEY_FREEFORM_WIDTH_RATIO, ratio).apply()
-    }
-
-    fun getFreeformHeightRatio(context: Context): Int {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getInt(KEY_FREEFORM_HEIGHT_RATIO, 60)
-    }
-
-    fun setFreeformHeightRatio(context: Context, ratio: Int) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putInt(KEY_FREEFORM_HEIGHT_RATIO, ratio).apply()
-    }
-
-    // 临时拉起目标状态 / Time-limited auto-launch target state.
+    // 临时拉起目标状态 / One-shot auto-launch target state.
     private var pendingTargetPkg: String? = null
-    private var targetExpiryTime: Long = 0L
 
     // 读取已选应用包名 / Read saved selected package names.
     fun getSelectedApps(context: Context): Set<String> {
@@ -111,24 +76,14 @@ object AppUtils {
         }
     }
 
-    fun setAutoLaunchTarget(pkg: String, validDurationMs: Long = 10000L) {
+    fun setPendingAutoJump(pkg: String) {
         pendingTargetPkg = pkg
-        // 记录过期时间 / Record the expiry timestamp.
-        targetExpiryTime = System.currentTimeMillis() + validDurationMs
     }
 
-    fun consumeAutoLaunchTarget(): String? {
-        val current = System.currentTimeMillis()
+    fun consumePendingAutoJump(): String? {
         val target = pendingTargetPkg
-        // 读取后立即清空 / Clear the one-shot target immediately after reading.
         pendingTargetPkg = null
-
-        // 仅返回未过期目标 / Return the target only while it is still valid.
-        return if (target != null && current <= targetExpiryTime) {
-            target
-        } else {
-            null
-        }
+        return target
     }
 
     // 加载已选应用 / Load only selected apps.
@@ -156,47 +111,16 @@ object AppUtils {
         result.sortedBy { it.name }
     }
 
-    // 检查使用情况权限 / Check the "View app usage" permission.
-    fun hasUsageStatsPermission(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName
-        )
-        return mode == AppOpsManager.MODE_ALLOWED
+    // 读取自动跳转开关 / Read the auto jump toggle.
+    fun isAutoJumpEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_AUTO_JUMP, false)
     }
 
-    // 检查真实前台应用 / Check whether the target app is the real foreground app.
-    fun isAppInForeground(context: Context, targetPackage: String): Boolean {
-        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val endTime = System.currentTimeMillis()
-
-        // 拉长检测窗口到 2 小时 / Extend the detection window to 2 hours.
-        val startTime = endTime - 1000L * 60 * 60 * 2
-
-        val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
-        val event = UsageEvents.Event()
-
-        var currentApp: String? = null
-        var previousApp: String? = null
-
-        // 追踪应用切换轨迹 / Track the package switch trail.
-        while (usageEvents.hasNextEvent()) {
-            usageEvents.getNextEvent(event)
-            // 页面进入前台 / ACTIVITY_RESUMED means an activity moved foreground.
-            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                // 仅在包名变化时更新 / Update only when the package actually changes.
-                if (currentApp != event.packageName) {
-                    previousApp = currentApp
-                    currentApp = event.packageName
-                }
-            }
-        }
-
-        val realForegroundApp = if (currentApp == context.packageName) previousApp else currentApp
-
-        return realForegroundApp == targetPackage
+    // 保存自动跳转开关 / Save the auto jump toggle.
+    fun setAutoJumpEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_AUTO_JUMP, enabled) }
     }
 
     // 读取接管通知开关 / Read the notification takeover toggle.

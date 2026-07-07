@@ -39,11 +39,6 @@
             android:documentLaunchMode="always"
             android:resizeableActivity="true"/>
 
-        <activity
-            android:name=".TrampolineActivity"
-            android:theme="@android:style/Theme.NoDisplay"
-            android:excludeFromRecents="true"
-            android:exported="false" />
 
         <service
             android:name=".service.BubbleNotificationListenerService"
@@ -55,13 +50,6 @@
             </intent-filter>
         </service>
 
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:multiprocess="false"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 
 </manifest>

@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.velviagris.bubblenotice",
+  "applicationId": "io.github.gracethings.bubblenotice",
   "variantName": "release",
   "elements": [
     {
@@ -12,7 +12,7 @@
       "filters": [],
       "attributes": [],
       "versionCode": 1,
-      "versionName": "1.0",
+      "versionName": "0.1.0",
       "outputFile": "app-release.apk"
     }
   ],

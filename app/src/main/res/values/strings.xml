@@ -9,10 +9,8 @@
     <string name="setting_permission_denied">Unauthorized. Tap to grant permission.</string>
     <string name="setting_bubble_title">Enable Console Bubble</string>
     <string name="setting_bubble_desc">Send a persistent notification to summon the bubble.</string>
-    <string name="setting_prevent_dupsplit">Prevent Duplicate Split Screen (Recommended)</string>
-    <string name="setting_usage_title">Prevent Duplicate Launch (Recommended)</string>
-    <string name="setting_usage_granted">Granted. Auto-blocks active apps.</string>
-    <string name="setting_usage_denied">Denied. Split-screen may fail on active apps.</string>
+    <string name="setting_auto_jump_title">Auto Jump on Notification Click</string>
+    <string name="setting_auto_jump_desc">When enabled, clicking the bubble notification jumps straight to the app without showing the bubble panel.</string>
     <string name="setting_apps_title">Manage Favorite Apps</string>
     <string name="setting_apps_count">%1$d split-screen apps selected</string>
     <string name="setting_apps_empty">No apps selected. Tap to add.</string>

@@ -62,10 +62,6 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         if (selectedApps.contains(pkg)) {
             serviceScope.launch {
 
-                if (AppUtils.isAppInForeground(this@BubbleNotificationListenerService, pkg)) {
-                    return@launch
-                }
-
                 val appName = AppUtils.getAppName(this@BubbleNotificationListenerService, pkg)
                 val extras = notification.extras
                 val title = extras.getString(Notification.EXTRA_TITLE) ?: appName
@@ -90,6 +86,10 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     lastEventTime = msgTime
                     isBubbleDismissed = false
                     UnreadMessageManager.addMessage(pkg, title, text, msgTime)
+                    
+                    if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
+                        AppUtils.setPendingAutoJump(pkg)
+                    }
                 }
 
                 val isTakeOver = AppUtils.isTakeOverNotifications(this@BubbleNotificationListenerService)
@@ -98,9 +98,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                val originalContentIntent = notification.contentIntent
-
-                updateMainBubble(pkg, appName, title, text, originalContentIntent, isUpdate = !isNewMessage, isTakeOver = isTakeOver)
+                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = !isNewMessage, isTakeOver = isTakeOver)
             }
         }
     }
@@ -130,7 +128,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         appName: String,
         title: String,
         text: String,
-        originalContentIntent: PendingIntent?,
+        msgTime: Long,
         isUpdate: Boolean,
         isTakeOver: Boolean
     ) {
@@ -160,6 +158,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             putExtra("EXTRA_PACKAGE_NAME", pkg)
             putExtra("EXTRA_TITLE", title)
             putExtra("EXTRA_TEXT", text)
+            putExtra("EXTRA_TIME", msgTime)
         }
         val bubbleIntent = PendingIntent.getActivity(
             this, 0, targetIntent,
@@ -186,12 +185,19 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val style = NotificationCompat.MessagingStyle(chatPartner)
             .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
 
-        // 通知主体意图 / Notification body intent: prefer the source app behavior.
-        val fallbackIntent = PendingIntent.getActivity(
-            this, 1, Intent(this, MainActivity::class.java),
+        // 通知主体意图 / Notification body intent: launch the target app directly.
+        val launchIntent = packageManager.getLaunchIntentForPackage(pkg)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        } ?: Intent(this, MainActivity::class.java)
+
+        val finalContentIntent = PendingIntent.getActivity(
+            this, 1, launchIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val finalContentIntent = originalContentIntent ?: fallbackIntent
+
+        val openAppAction = NotificationCompat.Action.Builder(
+            0, "打开应用", finalContentIntent
+        ).build()
 
         val builder = NotificationCompat.Builder(this, channelId)
             .setContentTitle(title)
@@ -206,6 +212,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
             .setOnlyAlertOnce(isUpdate) // 更新时静默 / Quietly update repeated messages.
             .setAutoCancel(true)        // 点击后清除通知 / Clear after tapping the notification.
+            .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
 
         try {
             NotificationManagerCompat.from(this).notify(MAIN_BUBBLE_NOTIFICATION_ID, builder.build())

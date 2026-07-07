@@ -47,7 +47,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.font.FontWeight
 import io.github.gracethings.bubblenotice.util.UnreadMessageManager
-import io.github.gracethings.bubblenotice.util.ShizukuUtils
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,6 +73,35 @@ class BubbleActivity : ComponentActivity() {
                 ) {
                     val config = LocalConfiguration.current
                     val isLandscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE
+                    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                    val coroutineScope = rememberCoroutineScope()
+
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                val pendingPkg = AppUtils.consumePendingAutoJump()
+                                if (pendingPkg != null) {
+                                    val launchIntent = packageManager.getLaunchIntentForPackage(pendingPkg)
+                                    if (launchIntent != null) {
+                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        coroutineScope.launch {
+                                            kotlinx.coroutines.delay(150) // Wait for bubble expansion animation to finish
+                                            try {
+                                                startActivity(launchIntent)
+                                                moveTaskToBack(true)
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
 
                     val messages by UnreadMessageManager.messagesFlow.collectAsState()
                     var selectedTab by remember { mutableStateOf(0) }
@@ -132,15 +160,7 @@ class BubbleActivity : ComponentActivity() {
                         Crossfade(targetState = activeTab, label = "BubbleTabTransition") { tab ->
                             when (tab) {
                                 0 -> UnreadMessagesDashboard(
-                                    isLandscape = isLandscape,
-                                    onSplitReply = { pkg ->
-                                        val launchMode = AppUtils.getLaunchMode(this@BubbleActivity)
-                                        if (launchMode == "freeform" && ShizukuUtils.isShizukuAvailable() && ShizukuUtils.isShizukuPermissionGranted()) {
-                                            launchFreeformDirectly(pkg)
-                                        } else {
-                                            launchTrampoline(pkg)
-                                        }
-                                    }
+                                    isLandscape = isLandscape
                                 )
                                 1 -> AppSelectionContent(isLandscape)
                             }
@@ -157,7 +177,6 @@ class BubbleActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    // 提取 Intent 中的消息详情并加入未读消息管理器 / Extract message details and add them to the manager.
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
         val pkg = intent.getStringExtra("EXTRA_PACKAGE_NAME")
@@ -170,26 +189,10 @@ class BubbleActivity : ComponentActivity() {
 
     @Composable
     private fun UnreadMessagesDashboard(
-        isLandscape: Boolean,
-        onSplitReply: (String) -> Unit
+        isLandscape: Boolean
     ) {
         val context = LocalContext.current
         val messages by UnreadMessageManager.messagesFlow.collectAsState()
-
-        var launchMode by remember { mutableStateOf("split") }
-        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-
-        DisposableEffect(lifecycleOwner) {
-            val observer = LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {
-                    launchMode = AppUtils.getLaunchMode(context)
-                }
-            }
-            lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose {
-                lifecycleOwner.lifecycle.removeObserver(observer)
-            }
-        }
 
         val grouped = remember(messages) {
             messages.groupBy { it.packageName to it.senderName }
@@ -263,7 +266,16 @@ class BubbleActivity : ComponentActivity() {
             ) {
                 items(grouped) { group ->
                     OutlinedCard(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val launchIntent = context.packageManager.getLaunchIntentForPackage(group.packageName)
+                                if (launchIntent != null) {
+                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(launchIntent)
+                                    (context as? android.app.Activity)?.moveTaskToBack(true)
+                                }
+                            },
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -326,31 +338,6 @@ class BubbleActivity : ComponentActivity() {
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                // 分屏回复 / Split Reply
-                                FilledTonalButton(
-                                    onClick = {
-                                        onSplitReply(group.packageName)
-                                        UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Launch,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (launchMode == "freeform") "小窗" else "分屏",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -389,52 +376,6 @@ class BubbleActivity : ComponentActivity() {
         }
     }
 
-    private fun launchTrampoline(targetPackage: String) {
-        val intent = Intent(this, TrampolineActivity::class.java).apply {
-            putExtra("EXTRA_TARGET_PACKAGE", targetPackage)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "启动失败: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun launchFreeformDirectly(targetPackage: String) {
-        var widthRatio = AppUtils.getFreeformWidthRatio(this)
-        var heightRatio = AppUtils.getFreeformHeightRatio(this)
-
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            val temp = widthRatio
-            widthRatio = heightRatio
-            heightRatio = temp
-        }
-
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
-
-        val width = (screenWidth * widthRatio / 100).coerceIn(100, screenWidth)
-        val height = (screenHeight * heightRatio / 100).coerceIn(100, screenHeight)
-        val left = (screenWidth - width) / 2
-        val top = (screenHeight - height) / 2
-        val right = left + width
-        val bottom = top + height
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val success = ShizukuUtils.launchInFreeform(this@BubbleActivity, targetPackage, left, top, right, bottom)
-            withContext(Dispatchers.Main) {
-                if (success) {
-                    moveTaskToBack(true)
-                } else {
-                    // 失败时回退到分屏模式启动 / Fallback to TrampolineActivity if freeform launch fails
-                    launchTrampoline(targetPackage)
-                }
-            }
-        }
-    }
 
     @Composable
     private fun AppSelectionContent(isLandscape: Boolean) {
@@ -515,11 +456,11 @@ class BubbleActivity : ComponentActivity() {
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
-                                val launchMode = AppUtils.getLaunchMode(context)
-                                if (launchMode == "freeform" && ShizukuUtils.isShizukuAvailable() && ShizukuUtils.isShizukuPermissionGranted()) {
-                                    launchFreeformDirectly(app.packageName)
-                                } else {
-                                    launchAppInHalfScreen(app.packageName, isLandscape)
+                                val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                                if (launchIntent != null) {
+                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(launchIntent)
+                                    (context as? android.app.Activity)?.moveTaskToBack(true)
                                 }
                             }
                             .padding(12.dp)
@@ -556,46 +497,5 @@ class BubbleActivity : ComponentActivity() {
         }
     }
 
-    private fun launchAppInHalfScreen(packageName: String, isLandscape: Boolean) {
-        // 使用生命周期协程 / Launch work in the Activity lifecycle scope.
-        lifecycleScope.launch {
 
-            // 前台冲突时退出 / Abort if the target app is already foreground.
-            if (AppUtils.hasUsageStatsPermission(this@BubbleActivity)) {
-                if (AppUtils.isAppInForeground(this@BubbleActivity, packageName)) {
-                    Toast.makeText(this@BubbleActivity, getString(R.string.toast_cannot_split), Toast.LENGTH_SHORT).show()
-                    moveTaskToBack(true)
-                    return@launch
-                }
-            }
-
-            val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return@launch
-
-            launchIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
-            )
-
-            val displayMetrics = resources.displayMetrics
-            val screenWidth = displayMetrics.widthPixels
-            val screenHeight = displayMetrics.heightPixels
-
-            val bounds = if (isLandscape) {
-                Rect(0, 0, screenWidth / 2, screenHeight)
-            } else {
-                Rect(0, 0, screenWidth, screenHeight / 2)
-            }
-
-            val options = ActivityOptions.makeBasic().setLaunchBounds(bounds)
-
-            try {
-                startActivity(launchIntent, options.toBundle())
-                moveTaskToBack(true)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                startActivity(launchIntent)
-                moveTaskToBack(true)
-            }
-        }
-    }
 }
