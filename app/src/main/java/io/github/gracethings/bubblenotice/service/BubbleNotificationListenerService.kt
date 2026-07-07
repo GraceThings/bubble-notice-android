@@ -73,6 +73,8 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 // 判断是否为新消息 / Check if it is a new message.
                 val isNewMessage = pkg != lastMessagePkg || title != lastMessageTitle || text != lastMessageText || msgTime != lastEventTime
 
+                val originalIntent = notification.contentIntent
+
                 // 如果用户已经手动移除了当前气泡，且没有新消息，则不重新显示气泡 / If user dismissed the bubble and no new message, do not show again.
                 if (isBubbleDismissed && !isNewMessage) {
                     return@launch
@@ -85,10 +87,10 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     lastMessageText = text
                     lastEventTime = msgTime
                     isBubbleDismissed = false
-                    UnreadMessageManager.addMessage(pkg, title, text, msgTime)
+                    UnreadMessageManager.addMessage(pkg, title, text, msgTime, originalIntent)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
-                        AppUtils.setPendingAutoJump(pkg)
+                        AppUtils.setPendingAutoJump(originalIntent)
                     }
                 }
 
@@ -98,7 +100,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = !isNewMessage, isTakeOver = isTakeOver)
+                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = !isNewMessage, isTakeOver = isTakeOver, originalIntent = originalIntent)
             }
         }
     }
@@ -130,7 +132,8 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         text: String,
         msgTime: Long,
         isUpdate: Boolean,
-        isTakeOver: Boolean
+        isTakeOver: Boolean,
+        originalIntent: PendingIntent?
     ) {
         val channelId = if (!isUpdate) {
             AppUtils.BUBBLE_CHANNEL_ALERT_ID
@@ -190,7 +193,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         } ?: Intent(this, MainActivity::class.java)
 
-        val finalContentIntent = PendingIntent.getActivity(
+        val finalContentIntent = originalIntent ?: PendingIntent.getActivity(
             this, 1, launchIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )

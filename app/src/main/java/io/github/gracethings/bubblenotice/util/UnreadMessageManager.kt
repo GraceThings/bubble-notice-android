@@ -9,7 +9,8 @@ object UnreadMessageManager {
         val packageName: String,
         val senderName: String,
         val messageText: String,
-        val timestamp: Long
+        val timestamp: Long,
+        val contentIntent: android.app.PendingIntent? = null
     )
 
     private val _messagesFlow = MutableStateFlow<List<Message>>(emptyList())
@@ -17,7 +18,7 @@ object UnreadMessageManager {
 
     private val messagesList = mutableListOf<Message>()
 
-    fun addMessage(packageName: String, senderName: String, messageText: String, timestamp: Long) {
+    fun addMessage(packageName: String, senderName: String, messageText: String, timestamp: Long, contentIntent: android.app.PendingIntent? = null) {
         synchronized(messagesList) {
             // 避免在短时间内添加完全相同的重复消息 / Avoid adding identical duplicate messages in quick succession.
             val isDuplicate = messagesList.any { 
@@ -27,7 +28,7 @@ object UnreadMessageManager {
                 Math.abs(it.timestamp - timestamp) < 1000 
             }
             if (!isDuplicate) {
-                messagesList.add(Message(packageName, senderName, messageText, timestamp))
+                messagesList.add(Message(packageName, senderName, messageText, timestamp, contentIntent))
                 _messagesFlow.value = ArrayList(messagesList)
             }
         }

@@ -23,7 +23,7 @@ object AppUtils {
     private const val KEY_AUTO_JUMP = "auto_jump_enabled"
 
     // 临时拉起目标状态 / One-shot auto-launch target state.
-    private var pendingTargetPkg: String? = null
+    private var pendingAutoJumpIntent: android.app.PendingIntent? = null
 
     // 读取已选应用包名 / Read saved selected package names.
     fun getSelectedApps(context: Context): Set<String> {
@@ -76,14 +76,29 @@ object AppUtils {
         }
     }
 
-    fun setPendingAutoJump(pkg: String) {
-        pendingTargetPkg = pkg
+    fun setPendingAutoJump(intent: android.app.PendingIntent?) {
+        pendingAutoJumpIntent = intent
     }
 
-    fun consumePendingAutoJump(): String? {
-        val target = pendingTargetPkg
-        pendingTargetPkg = null
+    fun consumePendingAutoJump(): android.app.PendingIntent? {
+        val target = pendingAutoJumpIntent
+        pendingAutoJumpIntent = null
         return target
+    }
+
+    // 安全地触发 PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
+    fun sendPendingIntentAllowed(context: Context, pendingIntent: android.app.PendingIntent) {
+        try {
+            val options = android.app.ActivityOptions.makeBasic()
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                options.setPendingIntentBackgroundActivityStartMode(
+                    android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }
+            pendingIntent.send(context, 0, null, null, null, null, options.toBundle())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // 加载已选应用 / Load only selected apps.

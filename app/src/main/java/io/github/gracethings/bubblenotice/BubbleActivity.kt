@@ -79,19 +79,15 @@ class BubbleActivity : ComponentActivity() {
                     DisposableEffect(lifecycleOwner) {
                         val observer = LifecycleEventObserver { _, event ->
                             if (event == Lifecycle.Event.ON_RESUME) {
-                                val pendingPkg = AppUtils.consumePendingAutoJump()
-                                if (pendingPkg != null) {
-                                    val launchIntent = packageManager.getLaunchIntentForPackage(pendingPkg)
-                                    if (launchIntent != null) {
-                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        coroutineScope.launch {
-                                            kotlinx.coroutines.delay(50) // Wait for bubble expansion animation to finish
-                                            try {
-                                                startActivity(launchIntent)
-                                                moveTaskToBack(true)
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
+                                val pendingIntent = AppUtils.consumePendingAutoJump()
+                                if (pendingIntent != null) {
+                                    coroutineScope.launch {
+                                        kotlinx.coroutines.delay(150) // Wait for bubble expansion animation to finish
+                                        try {
+                                            AppUtils.sendPendingIntentAllowed(this@BubbleActivity, pendingIntent)
+                                            moveTaskToBack(true)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
                                         }
                                     }
                                 }
@@ -269,13 +265,18 @@ class BubbleActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                val launchIntent = context.packageManager.getLaunchIntentForPackage(group.packageName)
-                                if (launchIntent != null) {
-                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(launchIntent)
-                                    UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                                    (context as? android.app.Activity)?.moveTaskToBack(true)
+                                val pendingIntent = group.messages.firstOrNull()?.contentIntent
+                                if (pendingIntent != null) {
+                                    AppUtils.sendPendingIntentAllowed(context, pendingIntent)
+                                } else {
+                                    val launchIntent = context.packageManager.getLaunchIntentForPackage(group.packageName)
+                                    if (launchIntent != null) {
+                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(launchIntent)
+                                    }
                                 }
+                                UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
+                                (context as? android.app.Activity)?.moveTaskToBack(true)
                             },
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.outlinedCardColors(
