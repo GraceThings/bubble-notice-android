@@ -41,4 +41,6 @@
     <string name="btn_clear_all">全部清除</string>
     <string name="empty_quick_launch">暂无快捷启动应用</string>
     <string name="action_open_app">打开应用</string>
+    <string name="desc_enter">进入</string>
+    <string name="btn_clear">清除</string>
 </resources>

@@ -241,7 +241,7 @@ class BubbleActivity : ComponentActivity() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = "Clear All",
+                        contentDescription = stringResource(R.string.btn_clear_all),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -336,7 +336,7 @@ class BubbleActivity : ComponentActivity() {
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(R.string.btn_clear),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

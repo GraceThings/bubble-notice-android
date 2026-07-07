@@ -168,7 +168,7 @@ fun SettingCard(title: String, subtitle: String, subtitleColor: Color = Material
             trailingContent = {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Enter",
+                    contentDescription = stringResource(R.string.desc_enter),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -40,4 +40,6 @@
     <string name="btn_clear_all">Clear All</string>
     <string name="empty_quick_launch">No Quick Launch Apps</string>
     <string name="action_open_app">Open App</string>
+    <string name="desc_enter">Enter</string>
+    <string name="btn_clear">Clear</string>
 </resources>
