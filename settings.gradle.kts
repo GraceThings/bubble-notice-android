@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BubbleSplit"
+rootProject.name = "BubbleNotice"
 include(":app")
  

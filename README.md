@@ -1,6 +1,6 @@
-# Bubble Split
+# Bubble Notice
 
-[中文](https://github.com/velviagris/BubbleSplit/blob/master/README-CN.md)
+[中文](https://github.com/velviagris/BubbleNotice/blob/master/README-CN.md)
 
 ## About
 
@@ -20,13 +20,13 @@ This is a lightweight application, inspired by Multitasking 'Bubbles' in Android
 3. Manage Favorite Apps
 4. Enable and display bubble
 
-> After setting up BubbleSplit, when new notifications come, tap bubble to split your screen, feel free to reply message or do anything you want!
+> After setting up BubbleNotice, when new notifications come, tap bubble to split your screen, feel free to reply message or do anything you want!
 
 ## Bugs report
 
-Open an [issue](https://github.com/velviagris/BubbleSplit/issues).
+Open an [issue](https://github.com/velviagris/BubbleNotice/issues).
 
 ## License
 
-See [License](https://github.com/velviagris/BubbleSplit/blob/main/LICENSE).
+See [License](https://github.com/velviagris/BubbleNotice/blob/main/LICENSE).
 

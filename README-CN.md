@@ -1,6 +1,6 @@
-# 无感小窗 (Bubble Split)
+# 无感小窗 (Bubble Notice)
 
-[English](https://github.com/velviagris/BubbleSplit/blob/master/README.md)
+[English](https://github.com/velviagris/BubbleNotice/blob/master/README.md)
 
 ## 关于
 
@@ -20,12 +20,12 @@
 3. 管理收藏的应用
 4. 启用并显示气泡
 
-> 设置好 BubbleSplit 后, 当有新通知到达时, 点击气泡即可分屏, 你可以随意回复消息或做任何你想做的事情!
+> 设置好 BubbleNotice 后, 当有新通知到达时, 点击气泡即可分屏, 你可以随意回复消息或做任何你想做的事情!
 
 ## Bug 反馈
 
-提交一个 [issue](https://github.com/velviagris/BubbleSplit/issues).
+提交一个 [issue](https://github.com/velviagris/BubbleNotice/issues).
 
 ## 开源协议
 
-参阅 [License](https://github.com/velviagris/BubbleSplit/blob/main/LICENSE).
+参阅 [License](https://github.com/velviagris/BubbleNotice/blob/main/LICENSE).

@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.velviagris.bubblesplit"
+    namespace = "io.github.gracethings.bubblenotice"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.velviagris.bubblesplit"
+        applicationId = "io.github.gracethings.bubblenotice"
         minSdk = 33
         targetSdk = 36
         versionCode = 1

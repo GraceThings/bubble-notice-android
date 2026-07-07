@@ -7,9 +7,9 @@
         android:shortcutShortLabel="@string/shortcut_show_bubble"
         android:shortcutLongLabel="@string/shortcut_show_bubble">
         <intent
-            android:action="com.velviagris.bubblesplit.ACTION_SHOW_BUBBLE"
-            android:targetPackage="com.velviagris.bubblesplit"
-            android:targetClass="com.velviagris.bubblesplit.MainActivity" />
+            android:action="io.github.gracethings.bubblenotice.ACTION_SHOW_BUBBLE"
+            android:targetPackage="io.github.gracethings.bubblenotice"
+            android:targetClass="io.github.gracethings.bubblenotice.MainActivity" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 </shortcuts>
