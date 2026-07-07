@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Bubble Split</string>
+    <string name="app_name">Bubble Notice</string>
 
     <string name="tab_settings">&#x8BBE;&#x7F6E;</string>
     <string name="tab_about">&#x5173;&#x4E8E;</string>
@@ -32,7 +32,7 @@
     <string name="notif_channel_name">Bubble Notifications</string>
     <string name="notif_channel_name_silent">气泡通知 (静音)</string>
     <string name="notif_channel_name_alert">气泡通知 (有声)</string>
-    <string name="notification_listener_label">BubbleSplit &#x901A;&#x77E5;&#x76D1;&#x542C;</string>
+    <string name="notification_listener_label">BubbleNotice &#x901A;&#x77E5;&#x76D1;&#x542C;</string>
     <string name="notif_partner_name">&#x5E94;&#x7528;&#x4E2D;&#x5FC3;</string>
     <string name="notif_main_msg">&#x70B9;&#x51FB;&#x53F3;&#x4E0B;&#x89D2;&#x7684;&#x5C0F;&#x6C14;&#x6CE1;&#x56FE;&#x6807;&#xFF0C;&#x547C;&#x51FA;&#x5206;&#x5C4F;&#x63A7;&#x5236;&#x53F0;&#xFF01;</string>
     <string name="notif_dynamic_msg">&#x70B9;&#x51FB;&#x6253;&#x5F00;</string>

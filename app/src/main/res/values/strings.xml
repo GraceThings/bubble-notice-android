@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Bubble Split</string>
+    <string name="app_name">Bubble Notice</string>
 
     <string name="tab_settings">Settings</string>
     <string name="tab_about">About</string>
@@ -30,7 +30,7 @@
     <string name="notif_channel_name">Bubble Notifications</string>
     <string name="notif_channel_name_silent">Bubble Notifications (Silent)</string>
     <string name="notif_channel_name_alert">Bubble Notifications (Alert)</string>
-    <string name="notification_listener_label">BubbleSplit Notification Listener</string>
+    <string name="notification_listener_label">BubbleNotice Notification Listener</string>
     <string name="notif_partner_name">App Center</string>
     <string name="notif_main_msg">Tap the bubble icon to open the split-screen console!</string>
     <string name="notif_dynamic_msg">Tap to open</string>
