@@ -1,17 +1,19 @@
-A lightweight bubble notice tool, inspired by Multitasking 'Bubbles' in Android 17, for android phones, no "Root/Shizuku" required.
+<p>A lightweight bubble notice tool, inspired by Multitasking 'Bubbles' in Android 17, for android phones, no "Root/Shizuku" required.</p>
 
-### Features
+<p><b>Features</b></p>
+<ul>
+<li>Subscribe to your favorite apps</li>
+<li>Show persistent message bubbles for incoming notifications</li>
+<li>Aggregate unread messages in a unified bubble console</li>
+<li>Directly jump to specific chat pages when tapping notifications or unread cards</li>
+<li>Dismiss bubbles to avoid distractions</li>
+</ul>
 
-* Subscribe to your favorite apps
-* Show persistent message bubbles for incoming notifications
-* Aggregate unread messages in a unified bubble console
-* Directly jump to specific chat pages when tapping notifications or unread cards
-* Dismiss bubbles to avoid distractions
+<p><b>How to use</b></p>
+<ol>
+<li>Allow reading "Notification Access"</li>
+<li>Manage Favorite Apps</li>
+<li>Enable and display bubble</li>
+</ol>
 
-### How to use
-
-1. Allow reading "Notification Access"
-2. Manage Favorite Apps
-3. Enable and display bubble
-
-After setting up BubbleNotice, when new notifications come, tap the bubble notification or the unread message card in the console to jump directly to the specific chat!
+<p>After setting up BubbleNotice, when new notifications come, tap the bubble notification or the unread message card in the console to jump directly to the specific chat!</p>

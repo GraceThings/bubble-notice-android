@@ -39,6 +39,14 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // for f-droid packaging
+    dependenciesInfo {
+        // Disables dependency metadata when building APKs.
+        includeInApk = false
+        // Disables dependency metadata when building Android App Bundles.
+        includeInBundle = false
+    }
 }
 
 dependencies {

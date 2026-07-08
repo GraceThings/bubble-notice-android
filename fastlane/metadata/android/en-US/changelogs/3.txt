@@ -1,2 +1,4 @@
-* Update package name to io.github.gracethings.bubblenotice
-* Initial release for F-Droid
+<ul>
+<li>Update package name to io.github.gracethings.bubblenotice</li>
+<li>Initial release for F-Droid</li>
+</ul>
