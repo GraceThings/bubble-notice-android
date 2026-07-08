@@ -1,10 +1,10 @@
-# 无感小窗 (Bubble Notice)
+# Bubble Notice
 
 [English](https://github.com/GraceThings/BubbleNotice/blob/master/README.md)
 
 ## 关于
 
-这是一个轻量级应用, 灵感来自于 Android 17 Beta 3 更新中的多任务 "气泡" 功能, 并且不需要 "Root/Shizuku" 权限.
+一个轻量级的气泡通知工具，灵感来源于 Android 17 中的多任务 "气泡" 功能，适用于安卓手机，且无需 "Root/Shizuku" 权限。
 
 ## 功能
 
@@ -20,7 +20,7 @@
 2. 订阅常用的应用
 3. 启用并显示主控台气泡
 
-> 设置好 BubbleNotice 后, 当有新通知到达时, 点击气泡弹出的通知或控制台内的未读消息卡片，即可一键直达应用内对应的聊天界面!
+> 设置好 BubbleNotice 后，当有新通知到达时，点击气泡弹出的通知或控制台内的未读消息卡片，即可一键直达应用内对应的聊天界面！
 
 ## Bug 反馈
 

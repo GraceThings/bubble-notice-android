@@ -4,7 +4,7 @@
 
 ## About
 
-This is a lightweight application, inspired by Multitasking 'Bubbles' in Android 17 Beta 3 update, and no "Root/Shizuku" needed.
+A lightweight bubble notice tool, inspired by Multitasking 'Bubbles' in Android 17, for android phones, no "Root/Shizuku" required.
 
 ## Features
 
