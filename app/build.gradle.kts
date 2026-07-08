@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "io.github.gracethings.bubblenotice"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.gracethings.bubblenotice"
         minSdk = 30
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 3
         versionName = "0.3.0"
 
