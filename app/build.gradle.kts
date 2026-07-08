@@ -28,6 +28,9 @@ android {
             )
         }
     }
+    packaging {
+        resources.excludes.add("META-INF/version-control-info.textproto")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
