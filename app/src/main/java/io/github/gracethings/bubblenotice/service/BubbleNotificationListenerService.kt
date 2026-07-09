@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.gracethings.bubblenotice.service
 
 import android.app.Notification
@@ -30,7 +46,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
     companion object {
         private const val MAIN_BUBBLE_NOTIFICATION_ID = 1001
 
-        // 用于判断是否为新消息的追踪变量 / Track variables to determine if it is a new message.
+        // 用于判断是否为新消息的追踪变�?/ Track variables to determine if it is a new message.
         private var lastMessagePkg: String? = null
         private var lastMessageTitle: String? = null
         private var lastMessageText: String? = null
@@ -67,7 +83,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val title = extras.getString(Notification.EXTRA_TITLE) ?: appName
                 val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
 
-                // 提取通知时间戳进行比对 / Extract timestamp for comparison.
+                // 提取通知时间戳进行比�?/ Extract timestamp for comparison.
                 val msgTime = if (notification.`when` != 0L) notification.`when` else sbn.postTime
 
                 // 判断是否为新消息 / Check if it is a new message.
@@ -76,7 +92,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val originalIntent = notification.contentIntent
                 val originalSmallIcon = notification.smallIcon
 
-                // 如果用户已经手动移除了当前气泡，且没有新消息，则不重新显示气泡 / If user dismissed the bubble and no new message, do not show again.
+                // 如果用户已经手动移除了当前气泡，且没有新消息，则不重新显示气�?/ If user dismissed the bubble and no new message, do not show again.
                 if (isBubbleDismissed && !isNewMessage) {
                     return@launch
                 }
@@ -172,7 +188,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
             .setDesiredHeight(600)
-            .setAutoExpandBubble(false) // 默认不强行弹脸 / Let Android decide when to expand.
+            .setAutoExpandBubble(false) // 默认不强行弹�?/ Let Android decide when to expand.
             .setSuppressNotification(false) // 确保不抑制通知显示 / Ensure notification is not suppressed.
             .build()
 
@@ -222,7 +238,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .addPerson(chatPartner)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
-            .setOnlyAlertOnce(isUpdate) // 更新时静默 / Quietly update repeated messages.
+            .setOnlyAlertOnce(isUpdate) // 更新时静�?/ Quietly update repeated messages.
             .setAutoCancel(true)        // 点击后清除通知 / Clear after tapping the notification.
             .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
 
@@ -234,7 +250,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         val isDndMode = AppUtils.isBubbleDndModeEnabled(this)
         if (!isDndMode && !isUpdate) {
-            // 如果未开启免打扰，且是新消息，则先取消旧通知以强制触发横幅弹出 / Force heads-up by canceling the old notification
+            // 如果未开启免打扰，且是新消息，则先取消旧通知以强制触发横幅弹�?/ Force heads-up by canceling the old notification
             try {
                 NotificationManagerCompat.from(this).cancel(MAIN_BUBBLE_NOTIFICATION_ID)
             } catch (e: Exception) {

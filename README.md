@@ -1,6 +1,6 @@
 # Bubble Notice
 
-[中文](https://github.com/GraceThings/BubbleNotice/blob/master/README-CN.md)
+[中文](https://github.com/GraceThings/bubble-notice-android/blob/master/README-CN.md)
 
 ## About
 
@@ -24,9 +24,9 @@ A lightweight bubble notice tool, inspired by Multitasking 'Bubbles' in Android 
 
 ## Bugs report
 
-Open an [issue](https://github.com/GraceThings/BubbleNotice/issues).
+Open an [issue](https://github.com/GraceThings/bubble-notice-android/issues).
 
 ## License
 
-See [License](https://github.com/GraceThings/BubbleNotice/blob/main/LICENSE).
+See [License](https://github.com/GraceThings/bubble-notice-android/blob/master/LICENSE.txt).
 

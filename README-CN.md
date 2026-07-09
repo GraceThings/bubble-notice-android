@@ -1,6 +1,6 @@
 # Bubble Notice
 
-[English](https://github.com/GraceThings/BubbleNotice/blob/master/README.md)
+[English](https://github.com/GraceThings/bubble-notice-android/blob/master/README.md)
 
 ## 关于
 
@@ -24,8 +24,8 @@
 
 ## Bug 反馈
 
-提交一个 [issue](https://github.com/GraceThings/BubbleNotice/issues).
+提交一个 [issue](https://github.com/GraceThings/bubble-notice-android/issues).
 
 ## 开源协议
 
-参阅 [License](https://github.com/GraceThings/BubbleNotice/blob/main/LICENSE).
+参阅 [License](https://github.com/GraceThings/bubble-notice-android/blob/master/LICENSE.txt).

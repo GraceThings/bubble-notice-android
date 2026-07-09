@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.gracethings.bubblenotice.util
 
 import android.app.AppOpsManager
@@ -23,22 +39,22 @@ object AppUtils {
     private const val KEY_AUTO_JUMP = "auto_jump_enabled"
     private const val KEY_BUBBLE_DND = "bubble_dnd_enabled"
 
-    // 临时拉起目标状态 / One-shot auto-launch target state.
+    // 临时拉起目标状�?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
 
-    // 读取已选应用包名 / Read saved selected package names.
+    // 读取已选应用包�?/ Read saved selected package names.
     fun getSelectedApps(context: Context): Set<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getStringSet(KEY_SELECTED_APPS, emptySet()) ?: emptySet()
     }
 
-    // 保存已选应用包名 / Save package names selected by the user.
+    // 保存已选应用包�?/ Save package names selected by the user.
     fun saveSelectedApps(context: Context, packages: Set<String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putStringSet(KEY_SELECTED_APPS, packages).apply()
     }
 
-    // 异步加载桌面可启动应用 / Asynchronously load launcher apps.
+    // 异步加载桌面可启动应�?/ Asynchronously load launcher apps.
     suspend fun loadInstalledApps(context: Context): List<AppItem> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -55,7 +71,7 @@ object AppUtils {
         }.sortedBy { it.name }
     }
 
-    // 按包名获取应用名称 / Get app name by package name.
+    // 按包名获取应用名�?/ Get app name by package name.
     fun getAppName(context: Context, packageName: String): String {
         val pm = context.packageManager
         return try {
@@ -66,7 +82,7 @@ object AppUtils {
         }
     }
 
-    // 按包名获取应用图标 Bitmap / Get app icon bitmap by package name.
+    // 按包名获取应用图�?Bitmap / Get app icon bitmap by package name.
     fun getAppIconBitmap(context: Context, packageName: String): android.graphics.Bitmap? {
         val pm = context.packageManager
         return try {
@@ -87,7 +103,7 @@ object AppUtils {
         return target
     }
 
-    // 安全地触发 PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
+    // 安全地触�?PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
     fun sendPendingIntentAllowed(context: Context, pendingIntent: android.app.PendingIntent) {
         try {
             val options = android.app.ActivityOptions.makeBasic()
@@ -102,7 +118,7 @@ object AppUtils {
         }
     }
 
-    // 加载已选应用 / Load only selected apps.
+    // 加载已选应�?/ Load only selected apps.
     suspend fun loadSelectedAppsOnly(context: Context, packageNames: Set<String>): List<AppItem> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
         val result = mutableListOf<AppItem>()
@@ -119,45 +135,45 @@ object AppUtils {
                     )
                 )
             } catch (e: PackageManager.NameNotFoundException) {
-                // 忽略已卸载应用 / Ignore packages that no longer exist.
+                // 忽略已卸载应�?/ Ignore packages that no longer exist.
                 e.printStackTrace()
             }
         }
-        // 按名称排序 / Return sorted by app name.
+        // 按名称排�?/ Return sorted by app name.
         result.sortedBy { it.name }
     }
 
-    // 读取自动跳转开关 / Read the auto jump toggle.
+    // 读取自动跳转开�?/ Read the auto jump toggle.
     fun isAutoJumpEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_AUTO_JUMP, false)
     }
 
-    // 保存自动跳转开关 / Save the auto jump toggle.
+    // 保存自动跳转开�?/ Save the auto jump toggle.
     fun setAutoJumpEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_AUTO_JUMP, enabled) }
     }
 
-    // 读取气泡免打扰开关 / Read the bubble DND toggle. Default is false (always popup).
+    // 读取气泡免打扰开�?/ Read the bubble DND toggle. Default is false (always popup).
     fun isBubbleDndModeEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_BUBBLE_DND, false)
     }
 
-    // 保存气泡免打扰开关 / Save the bubble DND toggle.
+    // 保存气泡免打扰开�?/ Save the bubble DND toggle.
     fun setBubbleDndModeEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_BUBBLE_DND, enabled) }
     }
 
-    // 读取接管通知开关 / Read the notification takeover toggle.
+    // 读取接管通知开�?/ Read the notification takeover toggle.
     fun isTakeOverNotifications(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_TAKE_OVER_NOTIFICATIONS, false)
     }
 
-    // 保存接管通知开关 / Save the notification takeover toggle.
+    // 保存接管通知开�?/ Save the notification takeover toggle.
     fun setTakeOverNotifications(context: Context, takeOver: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_TAKE_OVER_NOTIFICATIONS, takeOver) }
