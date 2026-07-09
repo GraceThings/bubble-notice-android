@@ -6,6 +6,16 @@
 
 一个轻量级的气泡通知工具，灵感来源于 Android 17 中的多任务 "气泡" 功能，适用于安卓手机，且无需 "Root/Shizuku" 权限。
 
+## 工作原理
+
+### 原始通知
+
+![Original Notifications Preview](screenshots/original-notification.gif)
+
+### 启用气泡通知
+
+![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.gif)
+
 ## 功能
 
 - 订阅你常用的应用
