@@ -88,8 +88,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 // 提取通知时间戳进行比�?/ Extract timestamp for comparison.
                 val msgTime = if (notification.`when` != 0L) notification.`when` else sbn.postTime
 
-                // 判断是否为新消息 / Check if it is a new message.
-                val isNewMessage = pkg != lastMessagePkg || title != lastMessageTitle || text != lastMessageText || msgTime != lastEventTime
+                  val isNewMessage = pkg != lastMessagePkg || title != lastMessageTitle || text != lastMessageText || msgTime != lastEventTime
 
                 val originalIntent = notification.contentIntent
                 val originalSmallIcon = notification.smallIcon
@@ -116,12 +115,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 }
 
                 val isTakeOver = AppUtils.isTakeOverNotifications(this@BubbleNotificationListenerService)
+                val shouldBeUpdate = !isNewMessage
 
                 if (isTakeOver) {
                     cancelNotification(sbn.key)
                 }
 
-                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = !isNewMessage, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon)
+                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon)
             }
         }
     }
@@ -158,11 +158,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         originalIntent: PendingIntent?,
         originalSmallIcon: android.graphics.drawable.Icon?
     ) {
-        val channelId = if (!isUpdate) {
-            AppUtils.BUBBLE_CHANNEL_ALERT_ID
-        } else {
-            AppUtils.BUBBLE_CHANNEL_SILENT_ID
-        }
+        val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
         val shortcutId = "bubble_notice_shortcut"
 
         val appIconDrawable = try {
@@ -253,8 +249,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             builder.setSmallIcon(R.drawable.ic_notification)
         }
 
-        val isDndMode = AppUtils.isBubbleDndModeEnabled(this)
-        if (!isDndMode && !isUpdate) {
+        if (!isUpdate) {
             // 如果未开启免打扰，且是新消息，则先取消旧通知以强制触发横幅弹�?/ Force heads-up by canceling the old notification
             try {
                 NotificationManagerCompat.from(this).cancel(MAIN_BUBBLE_NOTIFICATION_ID)
@@ -270,4 +265,9 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         }
     }
 }
+
+
+
+
+
 

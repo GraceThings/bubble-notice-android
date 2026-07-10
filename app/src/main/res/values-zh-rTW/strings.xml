@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bubble Notice</string>
     <string name="tab_settings">設定</string>
@@ -10,8 +10,6 @@
     <string name="setting_bubble_desc">發送常駐通知，隨時呼出氣泡</string>
     <string name="setting_auto_jump_title">點擊氣泡通知自動跳轉</string>
     <string name="setting_auto_jump_desc">開啟後，點擊氣泡通知會直接跳轉到對應應用，不顯示氣泡面板。</string>
-    <string name="setting_dnd_mode_title">氣泡通知勿擾模式</string>
-    <string name="setting_dnd_mode_desc">開啟後，同一個應用連續收到訊息時不再彈出橫幅，僅在氣泡上顯示圓點提示。</string>
     <string name="setting_apps_title">常用應用管理</string>
     <string name="setting_apps_count">已選擇 %1$d 個應用</string>
     <string name="setting_apps_empty">未選擇任何應用，點擊添加</string>
@@ -47,3 +45,4 @@
     <string name="toast_logs_exported">日誌匯出成功</string>
     <string name="toast_logs_empty">暫無日誌可匯出</string>
 </resources>
+

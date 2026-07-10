@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bubble Notice</string>
     <string name="tab_settings">설정</string>
@@ -10,8 +10,6 @@
     <string name="setting_bubble_desc">상주 알림을 보내 언제든 버블을 호출합니다.</string>
     <string name="setting_auto_jump_title">버블 알림 클릭 시 자동 이동</string>
     <string name="setting_auto_jump_desc">활성화 시 버블 알림을 탭하면 버블 패널을 표시하지 않고 바로 앱으로 이동합니다.</string>
-    <string name="setting_dnd_mode_title">버블 알림 방해 금지</string>
-    <string name="setting_dnd_mode_desc">활성화되면 같은 앱에서 여러 메시지가 올 때 계속해서 팝업되지 않고 버블에 점으로만 표시됩니다.</string>
     <string name="setting_apps_title">즐겨찾기 앱 관리</string>
     <string name="setting_apps_count">%1$d개의 앱이 선택되었습니다</string>
     <string name="setting_apps_empty">선택된 앱이 없습니다. 탭하여 추가하세요.</string>
@@ -47,3 +45,4 @@
     <string name="toast_logs_exported">로그를 내보냈습니다</string>
     <string name="toast_logs_empty">내보낼 로그가 없습니다</string>
 </resources>
+

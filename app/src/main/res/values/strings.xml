@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">Bubble Notice</string>
     <string name="tab_settings">Settings</string>
     <string name="tab_about">About</string>
@@ -9,8 +9,6 @@
     <string name="setting_bubble_desc">Send a persistent notification to summon the bubble.</string>
     <string name="setting_auto_jump_title">Auto Jump on Notification Click</string>
     <string name="setting_auto_jump_desc">When enabled, clicking the bubble notification jumps straight to the app without showing the bubble panel.</string>
-    <string name="setting_dnd_mode_title">Bubble Notification Do-Not-Disturb</string>
-    <string name="setting_dnd_mode_desc">When enabled, multiple messages from the same app will only show a dot instead of popping up repeatedly.</string>
     <string name="setting_apps_title">Manage Favorite Apps</string>
     <string name="setting_apps_count">%1$d apps selected</string>
     <string name="setting_apps_empty">No apps selected. Tap to add.</string>
@@ -46,3 +44,4 @@
     <string name="toast_logs_exported">Logs exported successfully</string>
     <string name="toast_logs_empty">No logs available to export</string>
 </resources>
+

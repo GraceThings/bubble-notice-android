@@ -27,6 +27,10 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-DEBUG"
+        }
     }
     packaging {
         resources.excludes.add("META-INF/version-control-info.textproto")

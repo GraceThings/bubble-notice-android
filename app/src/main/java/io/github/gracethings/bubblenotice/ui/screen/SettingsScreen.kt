@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,7 +56,6 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
     var hasListenerPermission by remember { mutableStateOf(false) }
     var isTakeOver by remember { mutableStateOf(false) }
     var isAutoJump by remember { mutableStateOf(false) }
-    var isDndMode by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -71,7 +70,6 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     hasListenerPermission = enabledListeners.contains(context.packageName)
                     isTakeOver = AppUtils.isTakeOverNotifications(context)
                     isAutoJump = AppUtils.isAutoJumpEnabled(context)
-                    isDndMode = AppUtils.isBubbleDndModeEnabled(context)
                 }
             }
             lifecycleOwner.lifecycle.addObserver(observer)
@@ -134,16 +132,6 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             onCheckedChange = {
                 isAutoJump = it
                 AppUtils.setAutoJumpEnabled(context, it)
-            }
-        )
-
-        SettingSwitchCard(
-            title = stringResource(R.string.setting_dnd_mode_title),
-            subtitle = stringResource(R.string.setting_dnd_mode_desc),
-            checked = isDndMode,
-            onCheckedChange = {
-                isDndMode = it
-                AppUtils.setBubbleDndModeEnabled(context, it)
             }
         )
 
@@ -225,3 +213,4 @@ fun PreviewSettingsScreen() {
         }
     }
 }
+
