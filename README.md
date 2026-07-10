@@ -4,17 +4,21 @@
 
 ## About
 
-A lightweight bubble notice tool, inspired by Multitasking 'Bubbles' in Android 17, for android phones, no "Root/Shizuku" required.
+A lightweight bubble notice tool, providing more intuitive notifications for the Multitasking 'Bubbles' feature in Android 17, and is also applicable to lower Android versions that support "Bubbles", no "Root/Shizuku" required.
 
-## How it works
+## App Effects
 
-### Original Notifications
+### Screenshot Comparison
 
-![Original Notifications Preview](screenshots/original-notification.gif)
+| Original Notifications                                                   | Bubble Notice Activated                                                     |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ![Original Notifications Preview](screenshots/original-notification.png) | ![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.png) |
 
-### Bubble Notice Activated
+### GIF Comparison
 
-![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.gif)
+| Original Notifications                                                   | Bubble Notice Activated                                                     |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ![Original Notifications Preview](screenshots/original-notification.gif) | ![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.gif) |
 
 ## Features
 

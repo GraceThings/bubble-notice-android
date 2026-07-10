@@ -4,17 +4,21 @@
 
 ## 关于
 
-一个轻量级的气泡通知工具，灵感来源于 Android 17 中的多任务 "气泡" 功能，适用于安卓手机，且无需 "Root/Shizuku" 权限。
+一个轻量级的气泡通知工具, 为 Android 17 中的多任务 "气泡" 功能提供更符合直觉的通知, 且同样适用于支持 "气泡" 的更低安卓版本, 无需 "Root/Shizuku" 权限.
 
-## 工作原理
+## 应用效果
 
-### 原始通知
+### 截图对比
 
-![Original Notifications Preview](screenshots/original-notification.gif)
+| 原始通知                                                                     | 启用气泡通知                                                                      |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ![Original Notifications Preview](screenshots/original-notification.png) | ![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.png) |
 
-### 启用气泡通知
+### 动图对比
 
-![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.gif)
+| 原始通知                                                                     | 启用气泡通知                                                                      |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ![Original Notifications Preview](screenshots/original-notification.gif) | ![Bubble Notice Activated Preview](screenshots/bubble-notice-activated.gif) |
 
 ## 功能
 
@@ -38,7 +42,7 @@
 2. 订阅常用的应用
 3. 启用并显示主控台气泡
 
-> 设置好 BubbleNotice 后，当有新通知到达时，点击气泡弹出的通知或控制台内的未读消息卡片，即可一键直达应用内对应的聊天界面！
+> 设置好 BubbleNotice 后, 当有新通知到达时, 点击气泡弹出的通知或控制台内的未读消息卡片, 即可一键直达应用内对应的聊天界面!
 
 ## Bug 反馈
 
