@@ -1,5 +1,10 @@
 # Bubble Notice
 
+<p >
+  <img src="https://img.shields.io/github/downloads/GraceThings/bubble-notice-android/total" alt="Downloads">
+  <img src="https://img.shields.io/github/v/release/GraceThings/bubble-notice-android" alt="Release">
+</p>
+
 [English](https://github.com/GraceThings/bubble-notice-android/blob/master/README.md)
 
 ## 关于
