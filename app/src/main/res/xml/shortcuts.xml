@@ -9,7 +9,7 @@
         <intent
             android:action="io.github.gracethings.bubblenotice.ACTION_SHOW_BUBBLE"
             android:targetPackage="io.github.gracethings.bubblenotice"
-            android:targetClass="io.github.gracethings.bubblenotice.MainActivity" />
+            android:targetClass="io.github.gracethings.bubblenotice.ShortcutActivity" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 </shortcuts>

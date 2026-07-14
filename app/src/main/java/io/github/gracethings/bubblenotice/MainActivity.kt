@@ -53,6 +53,60 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_SHOW_BUBBLE = "io.github.gracethings.bubblenotice.ACTION_SHOW_BUBBLE"
+
+        fun sendBubbleNotification(context: android.content.Context) {
+            val shortcutId = "bubble_notice_shortcut"
+            val target = android.content.Intent(context, BubbleActivity::class.java)
+            val bubbleIntent = android.app.PendingIntent.getActivity(
+                context, 0, target,
+                android.app.PendingIntent.FLAG_MUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
+            val chatPartner = androidx.core.app.Person.Builder()
+                .setName(context.getString(R.string.notif_partner_name))
+                .setIcon(icon)
+                .setImportant(true)
+                .build()
+
+            val shortcutIntent = android.content.Intent(context, MainActivity::class.java).apply { action = android.content.Intent.ACTION_MAIN }
+            val shortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, shortcutId)
+                .setCategories(setOf("android.shortcut.conversation"))
+                .setIntent(shortcutIntent)
+                .setLongLived(true)
+                .setShortLabel(context.getString(R.string.notif_partner_name))
+                .setPerson(chatPartner)
+                .build()
+            androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+
+            val bubbleData = androidx.core.app.NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
+                .setDesiredHeight(600)
+                .setAutoExpandBubble(false)
+                .build()
+
+            val contentIntent = android.app.PendingIntent.getActivity(
+                context, 1, android.content.Intent(context, MainActivity::class.java),
+                android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val style = androidx.core.app.NotificationCompat.MessagingStyle(chatPartner)
+                .addMessage(context.getString(R.string.notif_main_msg), System.currentTimeMillis(), chatPartner)
+
+            val builder = androidx.core.app.NotificationCompat.Builder(context, io.github.gracethings.bubblenotice.util.AppUtils.BUBBLE_CHANNEL_ALERT_ID)
+                .setContentIntent(contentIntent)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setStyle(style)
+                .setBubbleMetadata(bubbleData)
+                .setShortcutId(shortcutId)
+                .addPerson(chatPartner)
+                .setCategory(androidx.core.app.NotificationCompat.CATEGORY_MESSAGE)
+
+            try {
+                androidx.core.app.NotificationManagerCompat.from(context).notify(1001, builder.build())
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,7 +159,7 @@ class MainActivity : ComponentActivity() {
                             if (currentTab == "settings") {
                                 SettingsScreen(
                                     onNavigateToSelector = { showSelector = true },
-                                    onSendNotification = { sendBubbleNotification() }
+                                    onSendNotification = { sendBubbleNotification(this@MainActivity) }
                                 )
                             } else {
                                 AboutScreen()
@@ -125,7 +179,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == ACTION_SHOW_BUBBLE) {
-            sendBubbleNotification()
+            sendBubbleNotification(this@MainActivity)
         }
     }
 
@@ -156,57 +210,4 @@ class MainActivity : ComponentActivity() {
         nm.createNotificationChannel(alertChannel)
     }
 
-    private fun sendBubbleNotification() {
-        val shortcutId = "bubble_notice_shortcut"
-        val target = Intent(this, BubbleActivity::class.java)
-        val bubbleIntent = PendingIntent.getActivity(
-            this, 0, target,
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val icon = IconCompat.createWithResource(this, R.drawable.ic_launcher_foreground)
-        val chatPartner = Person.Builder()
-            .setName(getString(R.string.notif_partner_name))
-            .setIcon(icon)
-            .setImportant(true)
-            .build()
-
-        val shortcutIntent = Intent(this, MainActivity::class.java).apply { action = Intent.ACTION_MAIN }
-        val shortcut = ShortcutInfoCompat.Builder(this, shortcutId)
-            .setCategories(setOf("android.shortcut.conversation"))
-            .setIntent(shortcutIntent)
-            .setLongLived(true)
-            .setShortLabel(getString(R.string.notif_partner_name))
-            .setPerson(chatPartner)
-            .build()
-        ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
-
-        val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
-            .setDesiredHeight(600)
-            .setAutoExpandBubble(false)
-            .build()
-
-        val contentIntent = PendingIntent.getActivity(
-            this, 1, Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val style = NotificationCompat.MessagingStyle(chatPartner)
-            .addMessage(getString(R.string.notif_main_msg), System.currentTimeMillis(), chatPartner)
-
-        val builder = NotificationCompat.Builder(this, AppUtils.BUBBLE_CHANNEL_ALERT_ID)
-            .setContentIntent(contentIntent)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setStyle(style)
-            .setBubbleMetadata(bubbleData)
-            .setShortcutId(shortcutId)
-            .addPerson(chatPartner)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-
-        try {
-            NotificationManagerCompat.from(this).notify(1001, builder.build())
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-        }
-    }
 }

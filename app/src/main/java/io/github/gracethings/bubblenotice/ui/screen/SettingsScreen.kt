@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
+import androidx.compose.animation.core.*
+import androidx.compose.animation.animateColor
+import androidx.compose.ui.draw.scale
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +60,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
     var hasListenerPermission by remember { mutableStateOf(false) }
     var isTakeOver by remember { mutableStateOf(false) }
     var isAutoJump by remember { mutableStateOf(false) }
+    var showGuideDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -70,6 +75,12 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     hasListenerPermission = enabledListeners.contains(context.packageName)
                     isTakeOver = AppUtils.isTakeOverNotifications(context)
                     isAutoJump = AppUtils.isAutoJumpEnabled(context)
+                    
+                    val prefs = context.getSharedPreferences("bubble_prefs", android.content.Context.MODE_PRIVATE)
+                    val guideShown = prefs.getBoolean("permission_guide_shown", false)
+                    if (!hasListenerPermission && !guideShown) {
+                        showGuideDialog = true
+                    }
                 }
             }
             lifecycleOwner.lifecycle.addObserver(observer)
@@ -107,6 +118,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             title = stringResource(R.string.setting_permission_title),
             subtitle = if (hasListenerPermission) stringResource(R.string.setting_permission_granted) else stringResource(R.string.setting_permission_denied),
             subtitleColor = if (hasListenerPermission) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            highlight = !hasListenerPermission,
             onClick = {
                 val intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                 context.startActivity(intent)
@@ -153,15 +165,53 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             onClick = onNavigateToSelector
         )
     }
+
+    if (showGuideDialog) {
+        PermissionGuideDialog(
+            onDismiss = {
+                val prefs = context.getSharedPreferences("bubble_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("permission_guide_shown", true).apply()
+                showGuideDialog = false
+            },
+            onGoToSettings = {
+                val prefs = context.getSharedPreferences("bubble_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("permission_guide_shown", true).apply()
+                showGuideDialog = false
+                val intent = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                context.startActivity(intent)
+            }
+        )
+    }
 }
 
 @Composable
-fun SettingCard(title: String, subtitle: String, subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, onClick: () -> Unit) {
+fun SettingCard(title: String, subtitle: String, subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, highlight: Boolean = false, onClick: () -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (highlight) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+    val color by infiniteTransition.animateColor(
+        initialValue = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        targetValue = if (highlight) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "color"
+    )
+
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = if (highlight) color else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier
             .fillMaxWidth()
+            .scale(if (highlight) scale else 1f)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
     ) {

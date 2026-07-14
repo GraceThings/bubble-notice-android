@@ -48,6 +48,10 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +78,8 @@ private const val ISSUES_URL = "https://github.com/GraceThings/bubble-notice-and
 fun AboutScreen() {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val dateFormat = remember { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()) }
+    val logFileName = remember { "BubbleNotice_Logs_${dateFormat.format(Date())}.txt" }
 
     val exportLogsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
@@ -208,9 +214,9 @@ fun AboutScreen() {
                 AboutListItem(
                     icon = { Icon(Icons.Default.Download, contentDescription = null) },
                     title = stringResource(R.string.about_export_logs),
-                    subtitle = "app_logs.txt",
+                    subtitle = logFileName,
                     modifier = Modifier.clickable {
-                        exportLogsLauncher.launch("app_logs.txt")
+                        exportLogsLauncher.launch(logFileName)
                     }
                 )
             }
@@ -227,24 +233,36 @@ private fun AboutListItem(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    ListItem(
-        modifier = modifier,
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        leadingContent = icon,
-        headlineContent = {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.padding(end = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            icon()
+        }
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
                 text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
             )
-        },
-        supportingContent = {
             Text(
                 text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
-    )
+    }
 }
 
 @Preview(showBackground = true, name = "AboutScreen Preview")
