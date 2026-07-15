@@ -46,4 +46,7 @@
     <string name="toast_logs_empty">エクスポートできるログはありません</string>
     <string name="btn_view_more">さらに表示</string>
     <string name="btn_collapse">折りたたむ</string>
+
+    <string name="setting_group_general">一般</string>
+    <string name="setting_group_personalization">カスタマイズ</string>
 </resources>

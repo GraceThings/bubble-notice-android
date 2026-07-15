@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -93,77 +94,109 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
         }
     } else null
 
+    val topShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+    val middleShape = RoundedCornerShape(4.dp)
+    val bottomShape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
             .padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        // removed verticalArrangement = Arrangement.spacedBy(12.dp) to use our custom groups
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 8.dp),
+                .padding(top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.headlineLarge, // changed to headlineLarge to match about screen title
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 16.dp)
             )
         }
 
-        SettingCard(
-            title = stringResource(R.string.setting_permission_title),
-            subtitle = if (hasListenerPermission) stringResource(R.string.setting_permission_granted) else stringResource(R.string.setting_permission_denied),
-            subtitleColor = if (hasListenerPermission) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-            highlight = !hasListenerPermission,
-            onClick = {
-                val intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                context.startActivity(intent)
-            }
+        // 常规 (General) Group
+        Text(
+            text = stringResource(R.string.setting_group_general),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, start = 8.dp)
         )
-
-        SettingCard(
-            title = stringResource(R.string.setting_bubble_title),
-            subtitle = stringResource(R.string.setting_bubble_desc),
-            onClick = {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                    onSendNotification()
-                } else {
-                    permissionLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            SettingCard(
+                title = stringResource(R.string.setting_permission_title),
+                subtitle = if (hasListenerPermission) stringResource(R.string.setting_permission_granted) else stringResource(R.string.setting_permission_denied),
+                subtitleColor = if (hasListenerPermission) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                highlight = !hasListenerPermission,
+                shape = topShape,
+                onClick = {
+                    val intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    context.startActivity(intent)
                 }
-            }
+            )
+
+            SettingCard(
+                title = stringResource(R.string.setting_bubble_title),
+                subtitle = stringResource(R.string.setting_bubble_desc),
+                shape = bottomShape,
+                onClick = {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                        onSendNotification()
+                    } else {
+                        permissionLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            )
+        }
+
+        // 个性化 (Personalization) Group
+        Text(
+            text = stringResource(R.string.setting_group_personalization),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 8.dp)
         )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            SettingSwitchCard(
+                title = stringResource(R.string.setting_auto_jump_title),
+                subtitle = stringResource(R.string.setting_auto_jump_desc),
+                checked = isAutoJump,
+                shape = topShape,
+                onCheckedChange = {
+                    isAutoJump = it
+                    AppUtils.setAutoJumpEnabled(context, it)
+                }
+            )
 
-        SettingSwitchCard(
-            title = stringResource(R.string.setting_auto_jump_title),
-            subtitle = stringResource(R.string.setting_auto_jump_desc),
-            checked = isAutoJump,
-            onCheckedChange = {
-                isAutoJump = it
-                AppUtils.setAutoJumpEnabled(context, it)
-            }
-        )
+            SettingSwitchCard(
+                title = stringResource(R.string.setting_take_over_title),
+                subtitle = stringResource(R.string.setting_take_over_desc),
+                checked = isTakeOver,
+                shape = middleShape,
+                onCheckedChange = {
+                    isTakeOver = it
+                    AppUtils.setTakeOverNotifications(context, it)
+                }
+            )
 
-        SettingSwitchCard(
-            title = stringResource(R.string.setting_take_over_title),
-            subtitle = stringResource(R.string.setting_take_over_desc),
-            checked = isTakeOver,
-            onCheckedChange = {
-                isTakeOver = it
-                AppUtils.setTakeOverNotifications(context, it)
-            }
-        )
-
-
-
-        SettingCard(
-            title = stringResource(R.string.setting_apps_title),
-            subtitle = if (selectedCount > 0) stringResource(id = R.string.setting_apps_count, selectedCount) else stringResource(R.string.setting_apps_empty),
-            onClick = onNavigateToSelector
-        )
+            SettingCard(
+                title = stringResource(R.string.setting_apps_title),
+                subtitle = if (selectedCount > 0) stringResource(id = R.string.setting_apps_count, selectedCount) else stringResource(R.string.setting_apps_empty),
+                shape = bottomShape,
+                onClick = onNavigateToSelector
+            )
+        }
     }
 
     if (showGuideDialog) {
@@ -185,7 +218,14 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
 }
 
 @Composable
-fun SettingCard(title: String, subtitle: String, subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, highlight: Boolean = false, onClick: () -> Unit) {
+fun SettingCard(
+    title: String, 
+    subtitle: String, 
+    subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, 
+    highlight: Boolean = false, 
+    shape: Shape = RoundedCornerShape(4.dp),
+    onClick: () -> Unit
+) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -207,12 +247,12 @@ fun SettingCard(title: String, subtitle: String, subtitleColor: Color = Material
     )
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = if (highlight) color else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier
             .fillMaxWidth()
             .scale(if (highlight) scale else 1f)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(shape)
             .clickable { onClick() }
     ) {
         ListItem(
@@ -231,13 +271,19 @@ fun SettingCard(title: String, subtitle: String, subtitleColor: Color = Material
 }
 
 @Composable
-fun SettingSwitchCard(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SettingSwitchCard(
+    title: String, 
+    subtitle: String, 
+    checked: Boolean, 
+    shape: Shape = RoundedCornerShape(4.dp),
+    onCheckedChange: (Boolean) -> Unit
+) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(shape)
             .clickable { onCheckedChange(!checked) } // 点击卡片切换 / Toggle when the whole card is tapped.
     ) {
         ListItem(
@@ -263,4 +309,3 @@ fun PreviewSettingsScreen() {
         }
     }
 }
-

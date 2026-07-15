@@ -46,4 +46,7 @@
     <string name="toast_logs_empty">暫無日誌可匯出</string>
     <string name="btn_view_more">查看更多</string>
     <string name="btn_collapse">收起</string>
+
+    <string name="setting_group_general">一般</string>
+    <string name="setting_group_personalization">個人化</string>
 </resources>

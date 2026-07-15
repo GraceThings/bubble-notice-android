@@ -46,4 +46,7 @@
     <string name="toast_logs_empty">내보낼 로그가 없습니다</string>
     <string name="btn_view_more">더 보기</string>
     <string name="btn_collapse">접기</string>
+
+    <string name="setting_group_general">일반</string>
+    <string name="setting_group_personalization">개인 설정</string>
 </resources>
