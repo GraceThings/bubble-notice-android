@@ -50,4 +50,5 @@
     <string name="setting_group_general">일반</string>
     <string name="setting_group_personalization">개인 설정</string>
     <string name="time_just_now">방금</string>
+    <string name="msg_all_caught_up">모든 알림을 확인했습니다</string>
 </resources>

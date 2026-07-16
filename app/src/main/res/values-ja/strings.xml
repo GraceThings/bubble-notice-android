@@ -50,4 +50,5 @@
     <string name="setting_group_general">一般</string>
     <string name="setting_group_personalization">カスタマイズ</string>
     <string name="time_just_now">たった今</string>
+    <string name="msg_all_caught_up">すべての通知を確認しました</string>
 </resources>

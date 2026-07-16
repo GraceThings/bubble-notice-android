@@ -76,7 +76,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.animation.core.Spring
@@ -146,26 +147,34 @@ class BubbleActivity : ComponentActivity() {
 
                     val messages by UnreadMessageManager.messagesFlow.collectAsState()
                     var selectedTab by remember { mutableStateOf(if (messages.isEmpty()) 1 else 0) }
+                    var showAppSelector by remember { mutableStateOf(false) }
 
                     // Sync state if messages list becomes empty/populated? 
                     // To keep it simple, we only set it on launch. User can switch manually.
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         
-                        Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp)) {
-                            Crossfade(targetState = selectedTab, label = "BubbleTabTransition") { tab ->
-                                when (tab) {
-                                    0 -> UnreadMessagesDashboard(isLandscape = isLandscape)
-                                    1 -> AppSelectionContent(isLandscape)
+                        Box(modifier = Modifier.fillMaxSize().padding(bottom = if (showAppSelector) 0.dp else 80.dp)) {
+                            if (showAppSelector) {
+                                io.github.gracethings.bubblenotice.ui.screen.AppSelectorScreen(
+                                    onBack = { showAppSelector = false }
+                                )
+                            } else {
+                                Crossfade(targetState = selectedTab, label = "BubbleTabTransition") { tab ->
+                                    when (tab) {
+                                        0 -> UnreadMessagesDashboard(isLandscape = isLandscape)
+                                        1 -> AppSelectionContent(isLandscape)
+                                    }
                                 }
                             }
                         }
 
                         // Bottom Navigation and FAB
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
+                        if (!showAppSelector) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
                                 .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -193,8 +202,8 @@ class BubbleActivity : ComponentActivity() {
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Outlined.Chat,
-                                            contentDescription = "Unread Messages",
+                                            imageVector = Icons.AutoMirrored.Outlined.Chat,
+                                            contentDescription = stringResource(R.string.title_unread_messages),
                                             tint = if (selectedTab == 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -209,7 +218,7 @@ class BubbleActivity : ComponentActivity() {
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Apps,
-                                            contentDescription = "Quick Launch",
+                                            contentDescription = stringResource(R.string.tab_quick_launch),
                                             tint = if (selectedTab == 1) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -221,12 +230,7 @@ class BubbleActivity : ComponentActivity() {
                                     if (selectedTab == 0) {
                                         UnreadMessageManager.clearAll()
                                     } else {
-                                        val intent = Intent(context, MainActivity::class.java).apply {
-                                            action = MainActivity.ACTION_OPEN_SELECTOR
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                                        context.startActivity(intent)
-                                        moveTaskToBack(true)
+                                        showAppSelector = true
                                     }
                                 },
                                 shape = CircleShape,
@@ -238,6 +242,7 @@ class BubbleActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        } // end if (!showAppSelector)
 
                     }
                 }
@@ -295,24 +300,29 @@ class BubbleActivity : ComponentActivity() {
                 )
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.title_unread_messages),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
+            if (grouped.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Outlined.EmojiEvents,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.msg_all_caught_up),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(2.dp) // M3e minimal gap
             ) {
@@ -339,6 +349,7 @@ class BubbleActivity : ComponentActivity() {
                     )
                 }
             }
+            } // end else
         }
     }
 
@@ -377,7 +388,7 @@ class BubbleActivity : ComponentActivity() {
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteSweep,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.btn_clear),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.size(32.dp)
                 )
@@ -426,18 +437,19 @@ class BubbleActivity : ComponentActivity() {
                         }
                         UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
                         (context as? android.app.Activity)?.moveTaskToBack(true)
-                    }
-                    .animateContentSize(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    ),
+                    },
                 shape = shape,
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Column(
-                    modifier = Modifier.padding(14.dp)
+                    modifier = Modifier
+                        .animateContentSize(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            )
+                        )
+                        .padding(14.dp)
                 ) {
                     // Sender details header
                     Row(
@@ -479,20 +491,7 @@ class BubbleActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        
-                        IconButton(
-                            onClick = {
-                                UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.btn_clear),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

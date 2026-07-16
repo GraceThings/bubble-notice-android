@@ -50,4 +50,5 @@
     <string name="setting_group_general">一般</string>
     <string name="setting_group_personalization">個人化</string>
     <string name="time_just_now">剛剛</string>
+    <string name="msg_all_caught_up">您已處理完所有通知</string>
 </resources>
