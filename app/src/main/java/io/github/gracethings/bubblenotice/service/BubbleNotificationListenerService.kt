@@ -97,6 +97,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 }
 
                 // 如果是新消息，重置气泡手动移除状态并更新追踪 / If it is a new message, reset dismissal status and update tracking.
+                val actions = notification.actions?.toList() ?: emptyList()
                 if (isNewMessage) {
                     AppLogger.i("BubbleService", "New message detected from $pkg")
                     lastMessagePkg = pkg
@@ -104,7 +105,6 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     lastMessageText = text
                     lastEventTime = msgTime
                     isBubbleDismissed = false
-                    val actions = notification.actions?.toList() ?: emptyList()
                     UnreadMessageManager.addMessage(pkg, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
@@ -119,7 +119,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon)
+                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, actions = actions)
             }
         }
     }
@@ -154,7 +154,8 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         isUpdate: Boolean,
         isTakeOver: Boolean,
         originalIntent: PendingIntent?,
-        originalSmallIcon: android.graphics.drawable.Icon?
+        originalSmallIcon: android.graphics.drawable.Icon?,
+        actions: List<android.app.Notification.Action> = emptyList()
     ) {
         val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
         val shortcutId = "bubble_notice_shortcut"
@@ -245,6 +246,26 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .setOnlyAlertOnce(isUpdate) // 更新时静�?/ Quietly update repeated messages.
             .setAutoCancel(true)        // 点击后清除通知 / Clear after tapping the notification.
             .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
+
+        actions.forEach { nativeAction ->
+            val actionBuilder = NotificationCompat.Action.Builder(
+                0, 
+                nativeAction.title,
+                nativeAction.actionIntent
+            )
+            val remoteInputs = nativeAction.remoteInputs
+            if (remoteInputs != null) {
+                for (ri in remoteInputs) {
+                    val compatRi = androidx.core.app.RemoteInput.Builder(ri.resultKey)
+                        .setLabel(ri.label)
+                        .setChoices(ri.choices)
+                        .setAllowFreeFormInput(ri.allowFreeFormInput)
+                        .build()
+                    actionBuilder.addRemoteInput(compatRi)
+                }
+            }
+            builder.addAction(actionBuilder.build())
+        }
 
         if (smallIconCompat != null) {
             builder.setSmallIcon(smallIconCompat)
