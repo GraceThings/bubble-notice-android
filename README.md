@@ -2,7 +2,7 @@
 
 ![Downloads](https://img.shields.io/github/downloads/GraceThings/bubble-notice-android/total)
 ![Release](https://img.shields.io/github/v/release/GraceThings/bubble-notice-android)
-![F-Droid Version](https://img.shields.io/f-droid/v/io.github.gracethings.bubblenotice)
+[![F-Droid Version](https://img.shields.io/f-droid/v/io.github.gracethings.bubblenotice)](https://f-droid.org/packages/io.github.gracethings.bubblenotice)
 ![GitHub License](https://img.shields.io/github/license/GraceThings/bubble-notice-android)
 [![CodeQL](https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml)
 
