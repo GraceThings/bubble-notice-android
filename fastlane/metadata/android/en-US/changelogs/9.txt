@@ -1,0 +1,5 @@
+<ul>
+<li>Implement app pinning.</li>
+<li>Enhance work profile support.</li>
+<li>Enhanced navigation in the app selection UI.</li>
+</ul>
