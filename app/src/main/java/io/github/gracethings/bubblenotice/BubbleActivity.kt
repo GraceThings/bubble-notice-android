@@ -15,8 +15,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package io.github.gracethings.bubblenotice
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.window.Popup
+import androidx.compose.animation.core.*
+
+import androidx.compose.material.icons.filled.PushPin
+
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+
+import androidx.compose.foundation.combinedClickable
+
+import androidx.compose.foundation.ExperimentalFoundationApi
 
 import android.app.ActivityOptions
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
@@ -581,10 +596,13 @@ class BubbleActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun AppSelectionContent(isLandscape: Boolean) {
         var filteredAppList by remember { mutableStateOf<List<AppItem>>(emptyList()) }
+        var pinnedPackages by remember { mutableStateOf<Set<String>>(emptySet()) }
         var isLoading by remember { mutableStateOf(true) }
+        var showPinTutorial by remember { mutableStateOf(false) }
 
         val context = LocalContext.current
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -607,6 +625,14 @@ class BubbleActivity : ComponentActivity() {
             isLoading = true
             val selectedPackages = AppUtils.getSelectedApps(context)
             filteredAppList = AppUtils.loadSelectedAppsOnly(context, selectedPackages)
+            pinnedPackages = AppUtils.getPinnedApps(context)
+            
+            val hasShown = AppUtils.hasShownPinTutorial(context)
+            val unpinnedAppsCount = filteredAppList.count { !pinnedPackages.contains(it.packageName) }
+            if (!hasShown && unpinnedAppsCount > 0 && pinnedPackages.isEmpty()) {
+                showPinTutorial = true
+            }
+            
             isLoading = false
         }
 
@@ -644,6 +670,10 @@ class BubbleActivity : ComponentActivity() {
                 )
             }
         } else {
+            val (pinned, unpinned) = filteredAppList.partition { pinnedPackages.contains(it.packageName) }
+            val pinnedApps = pinned.sortedBy { it.name }
+            val unpinnedApps = unpinned.sortedBy { it.name }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 90.dp),
                 contentPadding = PaddingValues(16.dp),
@@ -651,50 +681,176 @@ class BubbleActivity : ComponentActivity() {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(filteredAppList) { app ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable {
-                                val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
-                                if (launchIntent != null) {
-                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(launchIntent)
-                                    (context as? android.app.Activity)?.moveTaskToBack(true)
-                                }
+                if (pinnedApps.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = stringResource(R.string.title_pinned_apps),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp, top = 8.dp, start = 8.dp)
+                        )
+                    }
+                    
+                    items(pinnedApps, key = { "pinned_${it.packageName}" }) { app ->
+                        AppGridItem(
+                            app = app,
+                            isPinned = true,
+                            pinnedPackages = pinnedPackages,
+                            context = context,
+                            onPinnedChange = { newSelection ->
+                                pinnedPackages = newSelection
+                                AppUtils.savePinnedApps(context, newSelection)
                             }
-                            .padding(12.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            tonalElevation = 1.dp,
-                            modifier = Modifier.size(56.dp)
+                        )
+                    }
+                    
+                    if (unpinnedApps.isNotEmpty()) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+
+                itemsIndexed(unpinnedApps, key = { _, app -> "unpinned_${app.packageName}" }) { index, app ->
+                    val isTutorialTarget = index == 0 && showPinTutorial
+                    AppGridItem(
+                        app = app,
+                        isPinned = false,
+                        pinnedPackages = pinnedPackages,
+                        context = context,
+                        isTutorialTarget = isTutorialTarget,
+                        onTutorialDismiss = {
+                            if (showPinTutorial) {
+                                showPinTutorial = false
+                                AppUtils.setPinTutorialShown(context)
+                            }
+                        },
+                        onPinnedChange = { newSelection ->
+                            pinnedPackages = newSelection
+                            AppUtils.savePinnedApps(context, newSelection)
+                            if (showPinTutorial) {
+                                showPinTutorial = false
+                                AppUtils.setPinTutorialShown(context)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    private fun AppGridItem(
+        app: AppItem,
+        isPinned: Boolean,
+        pinnedPackages: Set<String>,
+        context: Context,
+        isTutorialTarget: Boolean = false,
+        onTutorialDismiss: () -> Unit = {},
+        onPinnedChange: (Set<String>) -> Unit
+    ) {
+        val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+        val pulseScale by infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.3f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulse_scale"
+        )
+        val pulseAlpha by infiniteTransition.animateFloat(
+            initialValue = 0.6f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "pulse_alpha"
+        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .combinedClickable(
+                    onClick = {
+                        val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                        if (launchIntent != null) {
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(launchIntent)
+                            (context as? android.app.Activity)?.moveTaskToBack(true)
+                        }
+                    },
+                    onLongClick = {
+                        val newSelection = pinnedPackages.toMutableSet()
+                        if (isPinned) newSelection.remove(app.packageName) else newSelection.add(app.packageName)
+                        onPinnedChange(newSelection)
+                    }
+                )
+                .padding(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 1.dp,
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (isTutorialTarget) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .scale(pulseScale)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha), RoundedCornerShape(14.dp))
+                        )
+                        
+                        Popup(
+                            alignment = Alignment.TopCenter,
+                            offset = IntOffset(0, -140),
+                            properties = PopupProperties(focusable = false, dismissOnClickOutside = false)
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shadowElevation = 8.dp,
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .clickable { onTutorialDismiss() }
                             ) {
-                                Image(
-                                    bitmap = app.icon.toBitmap(120, 120).asImageBitmap(),
-                                    contentDescription = app.name,
-                                    modifier = Modifier.size(42.dp)
+                                Text(
+                                    text = stringResource(R.string.pin_tutorial_text),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = app.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
                     }
+
+                    Image(
+                        bitmap = app.icon.toBitmap(120, 120).asImageBitmap(),
+                        contentDescription = app.name,
+                        modifier = Modifier.size(42.dp)
+                    )
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = app.name,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

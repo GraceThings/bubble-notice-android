@@ -21,5 +21,6 @@ import android.graphics.drawable.Drawable
 data class AppItem(
     val name: String,
     val packageName: String,
-    val icon: Drawable
+    val icon: Drawable,
+    val isWorkProfile: Boolean = false
 )

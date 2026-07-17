@@ -51,5 +51,7 @@
     <string name="setting_group_personalization">个性化</string>
     <string name="time_just_now">刚刚</string>
     <string name="msg_all_caught_up">您已处理完所有通知</string>
+    <string name="title_pinned_apps">置顶应用</string>
+    <string name="pin_tutorial_text">💡 长按应用图标将其置顶</string>
 </resources>
 

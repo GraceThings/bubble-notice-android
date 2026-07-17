@@ -51,4 +51,6 @@
     <string name="setting_group_personalization">カスタマイズ</string>
     <string name="time_just_now">たった今</string>
     <string name="msg_all_caught_up">すべての通知を確認しました</string>
+    <string name="title_pinned_apps">固定されたアプリ</string>
+    <string name="pin_tutorial_text">💡 アプリアイコンを長押しして固定します</string>
 </resources>

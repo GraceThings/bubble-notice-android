@@ -35,26 +35,50 @@ object AppUtils {
     const val BUBBLE_CHANNEL_ID = BUBBLE_CHANNEL_SILENT_ID
     private const val PREFS_NAME = "bubble_prefs"
     private const val KEY_SELECTED_APPS = "selected_apps"
+    private const val KEY_PINNED_APPS = "pinned_apps"
+    private const val KEY_PIN_TUTORIAL_SHOWN = "pin_tutorial_shown"
     private const val KEY_TAKE_OVER_NOTIFICATIONS = "take_over_notifications"
     private const val KEY_AUTO_JUMP = "auto_jump_enabled"
     private const val KEY_BUBBLE_DND = "bubble_dnd_enabled"
 
-    // 临时拉起目标状�?/ One-shot auto-launch target state.
+    // 临时拉起目标状?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
 
-    // 读取已选应用包�?/ Read saved selected package names.
+    fun hasShownPinTutorial(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_PIN_TUTORIAL_SHOWN, false)
+    }
+
+    fun setPinTutorialShown(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_PIN_TUTORIAL_SHOWN, true).apply()
+    }
+
+    // 读取已置顶应用包名
+    fun getPinnedApps(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_PINNED_APPS, emptySet()) ?: emptySet()
+    }
+
+    // 保存已置顶应用包名
+    fun savePinnedApps(context: Context, packages: Set<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_PINNED_APPS, packages).apply()
+    }
+
+    // 读取已选应用包?/ Read saved selected package names.
     fun getSelectedApps(context: Context): Set<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getStringSet(KEY_SELECTED_APPS, emptySet()) ?: emptySet()
     }
 
-    // 保存已选应用包�?/ Save package names selected by the user.
+    // 保存已选应用包?/ Save package names selected by the user.
     fun saveSelectedApps(context: Context, packages: Set<String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putStringSet(KEY_SELECTED_APPS, packages).apply()
     }
 
-    // 异步加载桌面可启动应�?/ Asynchronously load launcher apps.
+    // 异步加载桌面可启动应?/ Asynchronously load launcher apps.
     suspend fun loadInstalledApps(context: Context): List<AppItem> = withContext(Dispatchers.IO) {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -62,18 +86,20 @@ object AppUtils {
         val apps = mutableListOf<AppItem>()
 
         for (profile in userManager.userProfiles) {
+            val isWork = profile != android.os.Process.myUserHandle()
             val activities = launcherApps.getActivityList(null, profile)
             for (activity in activities) {
                 apps.add(
                     AppItem(
                         name = activity.label.toString(),
                         packageName = activity.applicationInfo.packageName,
-                        icon = activity.getBadgedIcon(density)
+                        icon = activity.getBadgedIcon(density),
+                        isWorkProfile = isWork
                     )
                 )
             }
         }
-        apps.distinctBy { it.packageName }.sortedBy { it.name }
+        apps.distinctBy { it.packageName + "_" + it.isWorkProfile }.sortedBy { it.name }
     }
 
     // 按包名获取应用名�?/ Get app name by package name.

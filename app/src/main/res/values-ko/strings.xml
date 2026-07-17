@@ -51,4 +51,6 @@
     <string name="setting_group_personalization">개인 설정</string>
     <string name="time_just_now">방금</string>
     <string name="msg_all_caught_up">모든 알림을 확인했습니다</string>
+    <string name="title_pinned_apps">고정된 앱</string>
+    <string name="pin_tutorial_text">💡 앱 아이콘을 길게 눌러 고정하세요</string>
 </resources>

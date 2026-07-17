@@ -51,4 +51,6 @@
     <string name="setting_group_personalization">Personalization</string>
     <string name="time_just_now">Just now</string>
     <string name="msg_all_caught_up">You\'re all caught up</string>
+    <string name="title_pinned_apps">Pinned Apps</string>
+    <string name="pin_tutorial_text">💡 Long press an app icon to pin it</string>
 </resources>
