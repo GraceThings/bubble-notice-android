@@ -70,9 +70,12 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         if (sbn.isOngoing || (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0)) {
             return
         }
+        
+        val isWorkProfile = sbn.user != android.os.Process.myUserHandle()
+        val pkgId = "${pkg}:${if (isWorkProfile) 1 else 0}"
 
         val selectedApps = AppUtils.getSelectedApps(this)
-        if (selectedApps.contains(pkg)) {
+        if (selectedApps.contains(pkgId)) {
             AppLogger.d("BubbleService", "Intercepted notification from: $pkg")
             serviceScope.launch {
 
@@ -84,11 +87,21 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 // 提取通知时间戳进行比�?/ Extract timestamp for comparison.
                 val msgTime = if (notification.`when` != 0L) notification.`when` else sbn.postTime
 
-                  val isSameContent = pkg == lastMessagePkg && title == lastMessageTitle && text == lastMessageText
+                  val isSameContent = pkgId == lastMessagePkg && title == lastMessageTitle && text == lastMessageText
                   val isNewMessage = !isSameContent
 
                 val originalIntent = notification.contentIntent
                 val originalSmallIcon = notification.smallIcon
+                
+                // Extract avatar (largeIcon) or MessagingStyle person icon
+                var originalLargeIcon = notification.getLargeIcon()
+                if (originalLargeIcon == null) {
+                    // Try to extract from MessagingStyle
+                    val messagingStyle = androidx.core.app.NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification)
+                    messagingStyle?.messages?.lastOrNull()?.person?.icon?.let { iconCompat ->
+                        originalLargeIcon = iconCompat.toIcon(this@BubbleNotificationListenerService)
+                    }
+                }
 
                 // 如果用户已经手动移除了当前气泡，且没有新消息，则不重新显示气�?/ If user dismissed the bubble and no new message, do not show again.
                 if (isBubbleDismissed && !isNewMessage) {
@@ -100,12 +113,12 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val actions = notification.actions?.toList() ?: emptyList()
                 if (isNewMessage) {
                     AppLogger.i("BubbleService", "New message detected from $pkg")
-                    lastMessagePkg = pkg
+                    lastMessagePkg = pkgId
                     lastMessageTitle = title
                     lastMessageText = text
                     lastEventTime = msgTime
                     isBubbleDismissed = false
-                    UnreadMessageManager.addMessage(pkg, title, text, msgTime, originalIntent, actions)
+                    UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
                         AppUtils.setPendingAutoJump(originalIntent)
@@ -119,7 +132,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                updateMainBubble(pkg, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, actions = actions)
+                updateMainBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
             }
         }
     }
@@ -147,6 +160,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
     private fun updateMainBubble(
         pkg: String,
+        pkgId: String,
         appName: String,
         title: String,
         text: String,
@@ -155,18 +169,32 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         isTakeOver: Boolean,
         originalIntent: PendingIntent?,
         originalSmallIcon: android.graphics.drawable.Icon?,
+        originalLargeIcon: android.graphics.drawable.Icon? = null,
         actions: List<android.app.Notification.Action> = emptyList()
     ) {
         val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
         val shortcutId = "bubble_notice_shortcut"
 
-        val appIconDrawable = try {
-            packageManager.getApplicationIcon(pkg)
-        } catch (e: Exception) {
-            androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)!!
+        val icon = if (originalLargeIcon != null) {
+            try {
+                IconCompat.createFromIcon(this, originalLargeIcon)!!
+            } catch (e: Exception) {
+                // Fallback to app icon if conversion fails
+                val appIconDrawable = try {
+                    packageManager.getApplicationIcon(pkg)
+                } catch (ex: Exception) {
+                    androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)!!
+                }
+                IconCompat.createWithBitmap(appIconDrawable.toBitmap(144, 144))
+            }
+        } else {
+            val appIconDrawable = try {
+                packageManager.getApplicationIcon(pkg)
+            } catch (e: Exception) {
+                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)!!
+            }
+            IconCompat.createWithBitmap(appIconDrawable.toBitmap(144, 144))
         }
-        val iconBitmap = appIconDrawable.toBitmap(144, 144)
-        val icon = IconCompat.createWithBitmap(iconBitmap)
 
         val chatPartner = Person.Builder()
             .setName(appName)
@@ -177,7 +205,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         // 气泡点击意图 / Bubble action intent: open BubbleActivity as the bubble-notice console.
         val targetIntent = Intent(this, BubbleActivity::class.java).apply {
             setPackage(packageName)
-            putExtra("EXTRA_PACKAGE_NAME", pkg)
+            putExtra("EXTRA_PACKAGE_NAME", pkgId)
             putExtra("EXTRA_TITLE", title)
             putExtra("EXTRA_TEXT", text)
             putExtra("EXTRA_TIME", msgTime)

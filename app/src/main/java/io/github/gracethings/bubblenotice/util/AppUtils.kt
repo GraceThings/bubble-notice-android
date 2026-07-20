@@ -107,8 +107,9 @@ object AppUtils {
     // 按包名获取应用名�?/ Get app name by package name.
     fun getAppName(context: Context, packageName: String): String {
         val pm = context.packageManager
+        val realPkg = packageName.substringBefore(":")
         return try {
-            val info = pm.getApplicationInfo(packageName, 0)
+            val info = pm.getApplicationInfo(realPkg, 0)
             pm.getApplicationLabel(info).toString()
         } catch (e: Exception) {
             packageName
@@ -118,8 +119,9 @@ object AppUtils {
     // 按包名获取应用图�?Bitmap / Get app icon bitmap by package name.
     fun getAppIconBitmap(context: Context, packageName: String): android.graphics.Bitmap? {
         val pm = context.packageManager
+        val realPkg = packageName.substringBefore(":")
         return try {
-            val drawable = pm.getApplicationIcon(packageName)
+            val drawable = pm.getApplicationIcon(realPkg)
             drawable.toBitmap(150, 150)
         } catch (e: Exception) {
             null

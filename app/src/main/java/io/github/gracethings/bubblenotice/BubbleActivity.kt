@@ -193,79 +193,51 @@ class BubbleActivity : ComponentActivity() {
                             }
                         }
 
-                        // Bottom Navigation and FAB
+                        // Bottom Navigation and FAB using standard BottomAppBar
                         if (!showAppSelector) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.BottomCenter)
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(64.dp)
-                                    .padding(end = 16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .height(32.dp)
-                                            .width(64.dp)
-                                            .clip(CircleShape)
-                                            .background(if (selectedTab == 0) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                                            .clickable { selectedTab = 0 },
-                                        contentAlignment = Alignment.Center
+                            androidx.compose.material3.BottomAppBar(
+                                modifier = Modifier.align(Alignment.BottomCenter),
+                                actions = {
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    androidx.compose.material3.IconButton(
+                                        onClick = { selectedTab = 0 }
                                     ) {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Outlined.Chat,
                                             contentDescription = stringResource(R.string.title_unread_messages),
-                                            tint = if (selectedTab == 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                            tint = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    Box(
-                                        modifier = Modifier
-                                            .height(32.dp)
-                                            .width(64.dp)
-                                            .clip(CircleShape)
-                                            .background(if (selectedTab == 1) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                                            .clickable { selectedTab = 1 },
-                                        contentAlignment = Alignment.Center
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    androidx.compose.material3.IconButton(
+                                        onClick = { selectedTab = 1 }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Apps,
                                             contentDescription = stringResource(R.string.tab_quick_launch),
-                                            tint = if (selectedTab == 1) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                            tint = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                floatingActionButton = {
+                                    androidx.compose.material3.FloatingActionButton(
+                                        onClick = {
+                                            if (selectedTab == 0) {
+                                                UnreadMessageManager.clearAll()
+                                            } else {
+                                                showAppSelector = true
+                                            }
+                                        },
+                                        containerColor = androidx.compose.material3.BottomAppBarDefaults.bottomAppBarFabColor,
+                                        elevation = androidx.compose.material3.FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                                    ) {
+                                        Icon(
+                                            imageVector = if (selectedTab == 0) Icons.Default.ClearAll else Icons.Default.Add,
+                                            contentDescription = if (selectedTab == 0) "Clear All" else "Add App"
                                         )
                                     }
                                 }
-                            }
-
-                            FloatingActionButton(
-                                onClick = {
-                                    if (selectedTab == 0) {
-                                        UnreadMessageManager.clearAll()
-                                    } else {
-                                        showAppSelector = true
-                                    }
-                                },
-                                shape = CircleShape,
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Icon(
-                                    imageVector = if (selectedTab == 0) Icons.Default.ClearAll else Icons.Default.Add,
-                                    contentDescription = if (selectedTab == 0) "Clear All" else "Add App"
-                                )
-                            }
-                        }
+                            )
                         } // end if (!showAppSelector)
 
                     }
