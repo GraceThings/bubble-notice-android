@@ -27,7 +27,7 @@
 
 ## About
 
-A lightweight bubble notice tool, providing more intuitive notifications for the Multitasking 'Bubbles' feature in Android 17, and is also applicable to lower Android versions that support "Bubbles", no "Root/Shizuku" required.
+A lightweight bubble notice tool, providing more intuitive notifications for the Multitasking 'Bubbles' feature in Android 17, and is also applicable to lower Android versions that support "Bubbles" (Android 11+), no "Root/Shizuku" required.
 
 ## Demo
 
@@ -49,13 +49,13 @@ A lightweight bubble notice tool, providing more intuitive notifications for the
 
 ## Features
 
-- **Stay Focused**: Subscribe to your favorite or frequently used apps.
-- **Bubble Notifications**: Generate persistent system-level message bubbles for incoming notifications so you never miss important updates.
-- **Smart Stacking & Expansion**: Intelligently merge consecutive notifications from the same app. Defaults to a compact view, and expands to reveal the full text and native shortcut actions upon tapping.
-- **Quick Reply & Actions**: Seamlessly inherit native notification quick actions (like Mark as Read or Inline Reply) and handle them directly within the bubble console.
-- **One-Tap Jump**: Tap the header or background of an unread card to instantly jump directly to the specific chat page within the app.
-- **Centralized Dashboard**: Aggregate and manage all your unread messages efficiently in a unified bubble console.
-- **Distraction-Free**: Easily dismiss bubbles anytime to maintain focus.
+- **Stay Focused**: Subscribe to your favorite or frequently used apps
+- **Bubble Notifications**: Generate persistent system-level message bubbles for incoming notifications so you never miss important updates
+- **Smart Stacking & Expansion**: Intelligently merge consecutive notifications from the same app. Defaults to a compact view, and expands to reveal the full text and native shortcut actions upon tapping
+- **Quick Reply & Actions**: Seamlessly inherit native notification quick actions (like Mark as Read or Inline Reply) and handle them directly within the bubble console
+- **One-Tap Jump**: Tap the header or background of an unread card to instantly jump directly to the specific chat page within the app
+- **Centralized Dashboard**: Aggregate and manage all your unread messages efficiently in a unified bubble console
+- **Distraction-Free**: Easily dismiss bubbles anytime to maintain focus
 
 ## Install from Google Play
 

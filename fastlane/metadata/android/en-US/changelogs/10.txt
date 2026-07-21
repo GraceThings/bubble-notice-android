@@ -1,0 +1,6 @@
+<ul>
+<li>Support smart stacking and expansion for consecutive notifications.</li>
+<li>Support native quick reply and actions inside the bubble console.</li>
+<li>Support one-tap jump to app from unread cards.</li>
+<li>Add License and Privacy Policy to About screen.</li>
+</ul>
