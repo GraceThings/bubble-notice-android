@@ -599,13 +599,14 @@ class BubbleActivity : ComponentActivity() {
 
                 if (showReplyBoxForAction != null) {
                     val action = showReplyBoxForAction!!
+                    val replyHint = action.remoteInputs?.firstOrNull()?.label?.toString() ?: "Reply..."
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = replyText,
                             onValueChange = { replyText = it },
                             modifier = Modifier.weight(1f),
-                            placeholder = { Text("Reply...", style = MaterialTheme.typography.bodySmall) },
+                            placeholder = { Text(replyHint, style = MaterialTheme.typography.bodySmall) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp)
