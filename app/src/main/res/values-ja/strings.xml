@@ -56,4 +56,6 @@
     <string name="default_action">アクション</string>
     <string name="reply_placeholder">返信する...</string>
     <string name="send_action">送信</string>
+    <string name="about_license">ライセンス</string>
+    <string name="about_privacy_policy">プライバシーポリシー</string>
 </resources>

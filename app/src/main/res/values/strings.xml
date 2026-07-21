@@ -56,4 +56,6 @@
     <string name="default_action">Action</string>
     <string name="reply_placeholder">Reply...</string>
     <string name="send_action">Send</string>
+    <string name="about_license">License</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
 </resources>

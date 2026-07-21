@@ -39,6 +39,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Person
@@ -73,6 +75,8 @@ import java.util.Locale
 
 private const val PROJECT_URL = "https://github.com/GraceThings/bubble-notice-android"
 private const val ISSUES_URL = "https://github.com/GraceThings/bubble-notice-android/issues"
+private const val LICENSE_URL = "https://github.com/GraceThings/bubble-notice-android/blob/master/LICENSE.txt"
+private const val PRIVACY_URL = "https://github.com/GraceThings/bubble-notice-android/blob/master/SECURITY.md"
 
 @Composable
 fun AboutScreen() {
@@ -197,6 +201,20 @@ fun AboutScreen() {
                 showTrailingArrow = true,
                 shape = middleShape,
                 onClick = { uriHandler.openUri(ISSUES_URL) }
+            )
+            AboutListItem(
+                icon = { Icon(Icons.Default.Description, contentDescription = null) },
+                title = stringResource(R.string.about_license),
+                showTrailingArrow = true,
+                shape = middleShape,
+                onClick = { uriHandler.openUri(LICENSE_URL) }
+            )
+            AboutListItem(
+                icon = { Icon(Icons.Default.Security, contentDescription = null) },
+                title = stringResource(R.string.about_privacy_policy),
+                showTrailingArrow = true,
+                shape = middleShape,
+                onClick = { uriHandler.openUri(PRIVACY_URL) }
             )
             AboutListItem(
                 icon = { Icon(Icons.Default.Download, contentDescription = null) },

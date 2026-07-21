@@ -56,4 +56,6 @@
     <string name="default_action">작업</string>
     <string name="reply_placeholder">답장...</string>
     <string name="send_action">보내기</string>
+    <string name="about_license">라이선스</string>
+    <string name="about_privacy_policy">개인정보 처리방침</string>
 </resources>

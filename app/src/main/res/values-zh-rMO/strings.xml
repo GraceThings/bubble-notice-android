@@ -56,4 +56,6 @@
     <string name="default_action">操作</string>
     <string name="reply_placeholder">回覆...</string>
     <string name="send_action">發送</string>
+    <string name="about_license">開源許可</string>
+    <string name="about_privacy_policy">隱私政策</string>
 </resources>
