@@ -1,10 +1,27 @@
 # Bubble Notice
 
-![Downloads](https://img.shields.io/github/downloads/GraceThings/bubble-notice-android/total)
-![Release](https://img.shields.io/github/v/release/GraceThings/bubble-notice-android)
-[![F-Droid Version](https://img.shields.io/f-droid/v/io.github.gracethings.bubblenotice)](https://f-droid.org/packages/io.github.gracethings.bubblenotice)
-![GitHub License](https://img.shields.io/github/license/GraceThings/bubble-notice-android)
-[![CodeQL](https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml)
+<p align="center">
+  <img alt="Logo" src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" width="120" />
+</p>
+
+<p align="center">
+  <a href='https://play.google.com/store/apps/details?id=io.github.gracethings.bubblenotice'>
+    <img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height=80/>
+  </a> 
+  <a href="https://f-droid.org/en/packages/io.github.gracethings.bubblenotice/">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-en.svg" alt="Get it on F-Droid" height=80/>
+  </a>
+  <a href="https://github.com/GraceThings/bubble-notice-android/releases/latest">
+    <img src="https://raw.githubusercontent.com/Kunzisoft/Github-badge/main/get-it-on-github.png" alt="Get it on GitHub" height="80">
+  </a>
+
+<p align="center">
+  <img src="https://img.shields.io/github/downloads/GraceThings/bubble-notice-android/total" alt="Downloads"/>
+  <img src="https://img.shields.io/github/v/release/GraceThings/bubble-notice-android" alt="Release"/>
+  <a href="https://f-droid.org/packages/io.github.gracethings.bubblenotice"><img src="https://img.shields.io/f-droid/v/io.github.gracethings.bubblenotice" alt="F-Droid Version"/></a>
+  <img src="https://img.shields.io/github/license/GraceThings/bubble-notice-android" alt="GitHub License"/>
+  <a href="https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml"><img src="https://github.com/GraceThings/bubble-notice-android/actions/workflows/codeql.yml/badge.svg?branch=master" alt="CodeQL"/></a>
+</p>
 
 [中文](https://github.com/GraceThings/bubble-notice-android/blob/master/README-CN.md)
 
