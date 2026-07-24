@@ -1,17 +1,17 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "io.github.gracethings.bubblenotice"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.gracethings.bubblenotice"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 10
         versionName = "1.0.0"
 
@@ -39,9 +39,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+    kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11) } }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -70,11 +68,11 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
 
-    // Material 3 (默认包含 Expressive 设计元素)
+    // Material 3 (榛樿鍖呭惈 Expressive 璁捐鍏冪礌)
     implementation(libs.material3)
-    // Compose 核心图标库
+    // Compose 鏍稿績鍥炬爣搴?
     implementation(libs.androidx.material.icons.core)
-    // Compose 扩展图标库 (包含了 Settings, Info 等绝大多数图标)
+    // Compose 鎵╁睍鍥炬爣搴?(鍖呭惈浜?Settings, Info 绛夌粷澶у鏁板浘鏍?
     implementation(libs.androidx.material.icons.extended)
 
 

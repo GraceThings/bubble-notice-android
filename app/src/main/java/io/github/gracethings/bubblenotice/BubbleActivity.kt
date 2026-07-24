@@ -193,32 +193,12 @@ class BubbleActivity : ComponentActivity() {
                             }
                         }
 
-                        // Bottom Navigation and FAB using standard BottomAppBar
+                        // Bottom Navigation and FAB using standard HorizontalFloatingToolbar
                         if (!showAppSelector) {
-                            androidx.compose.material3.BottomAppBar(
-                                modifier = Modifier.align(Alignment.BottomCenter),
-                                actions = {
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    androidx.compose.material3.IconButton(
-                                        onClick = { selectedTab = 0 }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Outlined.Chat,
-                                            contentDescription = stringResource(R.string.title_unread_messages),
-                                            tint = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    androidx.compose.material3.IconButton(
-                                        onClick = { selectedTab = 1 }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Apps,
-                                            contentDescription = stringResource(R.string.tab_quick_launch),
-                                            tint = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                },
+                            @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+                            androidx.compose.material3.HorizontalFloatingToolbar(
+                                expanded = true,
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
                                 floatingActionButton = {
                                     androidx.compose.material3.FloatingActionButton(
                                         onClick = {
@@ -228,7 +208,6 @@ class BubbleActivity : ComponentActivity() {
                                                 showAppSelector = true
                                             }
                                         },
-                                        containerColor = androidx.compose.material3.BottomAppBarDefaults.bottomAppBarFabColor,
                                         elevation = androidx.compose.material3.FloatingActionButtonDefaults.bottomAppBarFabElevation()
                                     ) {
                                         Icon(
@@ -237,7 +216,27 @@ class BubbleActivity : ComponentActivity() {
                                         )
                                     }
                                 }
-                            )
+                            ) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = { selectedTab = 0 }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.Chat,
+                                        contentDescription = stringResource(R.string.title_unread_messages),
+                                        tint = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                androidx.compose.material3.IconButton(
+                                    onClick = { selectedTab = 1 }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Apps,
+                                        contentDescription = stringResource(R.string.tab_quick_launch),
+                                        tint = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         } // end if (!showAppSelector)
 
                     }
