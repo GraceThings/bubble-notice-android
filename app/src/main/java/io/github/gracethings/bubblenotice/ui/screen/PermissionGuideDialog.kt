@@ -62,7 +62,7 @@ fun PermissionGuideDialog(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Animation Area
+                // Animation Area (动画区域)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -97,13 +97,13 @@ fun PermissionGuideDialog(
 private fun PermissionAnimationSimulation() {
     var step by remember { mutableStateOf(0) }
     
-    // Hand position
+    // Hand position (手势位置)
     val handX by animateFloatAsState(
         targetValue = when (step) {
-            0 -> 0.5f // Start at center bottom
-            1, 2 -> 0.5f // Move to "Bubble Notice" list item
-            3, 4 -> 0.8f // Move to Switch
-            5, 6 -> 0.7f // Move to Allow button on Dialog
+            0 -> 0.5f // Start at center bottom (从底部居中开始)
+            1, 2 -> 0.5f // Move to "Bubble Notice" list item (移动到 "Bubble Notice" 列表项)
+            3, 4 -> 0.8f // Move to Switch (移动到开关)
+            5, 6 -> 0.7f // Move to Allow button on Dialog (移动到对话框上的允许按钮)
             else -> 0.5f
         },
         animationSpec = tween(600, easing = FastOutSlowInEasing), label = ""
@@ -112,33 +112,33 @@ private fun PermissionAnimationSimulation() {
     val handY by animateFloatAsState(
         targetValue = when (step) {
             0 -> 1.0f
-            1, 2 -> 0.4f // List item
-            3, 4 -> 0.3f // Switch
-            5, 6 -> 0.65f // Allow button
+            1, 2 -> 0.4f // List item (列表项)
+            3, 4 -> 0.3f // Switch (开关)
+            5, 6 -> 0.65f // Allow button (允许按钮)
             else -> 1.0f
         },
         animationSpec = tween(600, easing = FastOutSlowInEasing), label = ""
     )
     
-    // Hand click scale
+    // Hand click scale (手势点击缩放)
     val handScale by animateFloatAsState(
         targetValue = if (step == 2 || step == 4 || step == 6) 0.8f else 1.2f,
         animationSpec = tween(200), label = ""
     )
     
-    // Switch state
+    // Switch (开关) state
     val switchChecked = step >= 4
 
     LaunchedEffect(Unit) {
         while (true) {
             step = 0; delay(500)
-            step = 1; delay(800) // Move to list item
-            step = 2; delay(300) // Click list item
-            step = 3; delay(800) // Move to switch
-            step = 4; delay(300) // Click switch
-            step = 5; delay(800) // Move to allow button
-            step = 6; delay(300) // Click allow
-            step = 7; delay(1500) // Hold
+            step = 1; delay(800) // Move to list item (移动到列表项)
+            step = 2; delay(300) // Click list item (点击列表项)
+            step = 3; delay(800) // Move to switch (移动到开关)
+            step = 4; delay(300) // Click switch (点击开关)
+            step = 5; delay(800) // Move to allow button (移动到允许按钮)
+            step = 6; delay(300) // Click allow (点击允许)
+            step = 7; delay(1500) // Hold (保持)
         }
     }
 
@@ -146,7 +146,7 @@ private fun PermissionAnimationSimulation() {
         val w = maxWidth
         val h = maxHeight
         
-        // Screen 1: App List
+        // Screen 1: App List (屏幕 1：应用列表)
         AnimatedVisibility(
             visible = step < 3,
             enter = fadeIn(),
@@ -188,7 +188,7 @@ private fun PermissionAnimationSimulation() {
             }
         }
         
-        // Screen 2: App Detail
+        // Screen 2: App Detail (屏幕 2：应用详情)
         AnimatedVisibility(
             visible = step >= 3,
             enter = fadeIn(),
@@ -213,7 +213,7 @@ private fun PermissionAnimationSimulation() {
             }
         }
         
-        // Screen 3: System Alert Dialog Overlay
+        // Screen 3: System Alert Dialog Overlay (屏幕 3：系统弹窗覆盖层)
         AnimatedVisibility(
             visible = step >= 5,
             enter = fadeIn(),
@@ -246,7 +246,7 @@ private fun PermissionAnimationSimulation() {
             }
         }
 
-        // Hand Cursor
+        // Hand Cursor (手形光标)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)

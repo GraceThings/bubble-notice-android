@@ -12,7 +12,7 @@ object TimeUtils {
         val now = System.currentTimeMillis()
         val diff = now - timestamp
         
-        // Less than 1 minute -> Just now
+        // Less than 1 minute -> Just now (小于 1 分钟 -> 刚刚)
         if (diff < 60_000) {
             return context.getString(R.string.time_just_now)
         }

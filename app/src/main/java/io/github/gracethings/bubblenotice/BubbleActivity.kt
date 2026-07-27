@@ -39,13 +39,10 @@ import androidx.compose.foundation.combinedClickable
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 
-import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Rect
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -73,10 +70,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.lifecycleScope
 import io.github.gracethings.bubblenotice.model.AppItem
 import io.github.gracethings.bubblenotice.util.AppUtils
-import io.github.gracethings.bubblenotice.util.AppLogger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -173,8 +168,8 @@ class BubbleActivity : ComponentActivity() {
                     var selectedTab by remember { mutableStateOf(if (messages.isEmpty()) 1 else 0) }
                     var showAppSelector by remember { mutableStateOf(false) }
 
-                    // Sync state if messages list becomes empty/populated? 
-                    // To keep it simple, we only set it on launch. User can switch manually.
+                    // Sync state if messages list becomes empty/populated? (如果消息列表为空/填满，同步状态？) 
+                    // To keep it simple, we only set it on launch. User can switch manually. (为了保持简单，我们仅在启动时设置。用户可以手动切换。)
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         
@@ -193,7 +188,7 @@ class BubbleActivity : ComponentActivity() {
                             }
                         }
 
-                        // Bottom Navigation and FAB using standard HorizontalFloatingToolbar
+                        // Bottom Navigation and FAB using standard HorizontalFloatingToolbar (使用标准 HorizontalFloatingToolbar 的底部导航和 FAB)
                         if (!showAppSelector) {
                             @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
                             androidx.compose.material3.HorizontalFloatingToolbar(
@@ -211,7 +206,7 @@ class BubbleActivity : ComponentActivity() {
 
                                                       for (key in snapshotKeys) {
                                                           UnreadMessageManager.clearMessagesForSender(key.first, key.second)
-                                                          kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect
+                                                          kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect (80毫秒以获得更平滑的涟漪效果)
                                                       }
                                                   }
                                               } else {
@@ -247,7 +242,7 @@ class BubbleActivity : ComponentActivity() {
                                     )
                                 }
                             }
-                        } // end if (!showAppSelector)
+                        } // end if (!showAppSelector) (结束 if (!showAppSelector))
 
                     }
                 }
@@ -340,7 +335,7 @@ class BubbleActivity : ComponentActivity() {
             } else {
                 LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(2.dp) // M3e minimal gap
+                verticalArrangement = Arrangement.spacedBy(2.dp) // M3e minimal gap (M3e 最小间距)
             ) {
                 itemsIndexed(grouped, key = { _, group -> group.packageName + group.senderName }) { index, group ->
                     val isFirst = index == 0
@@ -365,7 +360,7 @@ class BubbleActivity : ComponentActivity() {
                     )
                 }
             }
-            } // end else
+            } // end else (结束 else)
         }
     }
 
@@ -388,7 +383,7 @@ class BubbleActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .clip(shape)
         ) {
-            // Background Action (Delete)
+            // Background Action (Delete) (后台操作 (删除))
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -410,7 +405,7 @@ class BubbleActivity : ComponentActivity() {
                 )
             }
 
-            // Foreground Content
+            // Foreground Content (前台内容)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -466,7 +461,7 @@ class BubbleActivity : ComponentActivity() {
                         )
                         .padding(14.dp)
                 ) {
-                    // Sender details header
+                    // Sender details header (发送者详细信息标题)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -511,7 +506,7 @@ class BubbleActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Message Bubbles
+                    // Message Bubbles (消息气泡)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()

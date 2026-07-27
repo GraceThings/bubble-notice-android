@@ -52,7 +52,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.gracethings.bubblenotice.R
 import io.github.gracethings.bubblenotice.util.AppUtils
-import android.widget.Toast
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 
 @Composable
@@ -104,7 +103,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
             .padding(bottom = 24.dp),
-        // removed verticalArrangement = Arrangement.spacedBy(12.dp) to use our custom groups
+        // removed verticalArrangement = Arrangement.spacedBy(12.dp) to use our custom groups (移除了 verticalArrangement = Arrangement.spacedBy(12.dp) 以使用我们的自定义分组)
     ) {
         Row(
             modifier = Modifier
@@ -114,7 +113,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
         ) {
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge, // changed to headlineLarge to match about screen title
+                style = MaterialTheme.typography.headlineLarge, // changed to headlineLarge to match about screen title (已更改为 headlineLarge 以匹配关于屏幕的标题)
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 16.dp)
             )

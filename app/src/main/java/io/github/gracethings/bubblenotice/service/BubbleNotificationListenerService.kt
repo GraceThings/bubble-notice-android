@@ -93,7 +93,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val styleTime = lastStyleMessage?.timestamp ?: 0L
                 val messageCount = messagingStyle?.messages?.size ?: -1
                 
-                // Extract full text if MessagingStyle exists to mimic native stacked notifications
+                // Extract full text if MessagingStyle exists to mimic native stacked notifications (如果存在 MessagingStyle，则提取全文以模仿原生的堆叠通知)
                 if (messagingStyle != null && messagingStyle.messages.isNotEmpty()) {
                     text = messagingStyle.messages.joinToString("\n") { it.text ?: "" }
                 }
@@ -117,7 +117,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val originalIntent = notification.contentIntent
                 val originalSmallIcon = notification.smallIcon
                 
-                // Extract avatar (largeIcon) or MessagingStyle person icon
+                // Extract avatar (largeIcon) or MessagingStyle person icon (提取头像 (largeIcon) 或 MessagingStyle 个人图标)
                 var originalLargeIcon = notification.getLargeIcon()
                 if (originalLargeIcon == null) {
                     lastStyleMessage?.person?.icon?.let { iconCompat ->
@@ -198,7 +198,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             try {
                 IconCompat.createFromIcon(this, originalLargeIcon)!!
             } catch (e: Exception) {
-                // Fallback to app icon if conversion fails
+                // Fallback to app icon if conversion fails (如果转换失败，则回退到应用图标)
                 val appIconDrawable = try {
                     packageManager.getApplicationIcon(pkg)
                 } catch (ex: Exception) {

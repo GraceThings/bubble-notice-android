@@ -16,7 +16,6 @@
  */
 package io.github.gracethings.bubblenotice.util
 
-import io.github.gracethings.bubblenotice.util.AppLogger
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,8 +41,8 @@ object UnreadMessageManager {
             val existingIndex = messagesList.indexOfFirst { it.packageName == packageName && it.senderName == senderName }
             val newMessage = Message(packageName, senderName, messageText, timestamp, contentIntent, actions)
             if (existingIndex != -1) {
-                // To mimic native Android stacked notifications, we replace the existing message from this sender.
-                // For MessagingStyle apps (Google Chat), the new messageText contains the full history (1\n1\n1).
+                // To mimic native Android stacked notifications, we replace the existing message from this sender. (为了模仿原生 Android 堆叠通知，我们替换了该发送者的现有消息。)
+                // For MessagingStyle apps (Google Chat), the new messageText contains the full history (1\n1\n1). (对于 MessagingStyle 风格的应用（如 Google Chat），新的 messageText 包含完整的历史记录 (1\n1\n1)。)
                 // For WeChat, the new messageText is the summary ([3条]AAA: 1).
                 val oldMessage = messagesList[existingIndex]
                 val mergedIntent = contentIntent ?: oldMessage.contentIntent

@@ -10,7 +10,7 @@ import java.util.Locale
 
 object AppLogger {
     private var logFile: File? = null
-    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 5MB limit
+    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 5MB limit (5MB 限制)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
     fun init(context: Context) {

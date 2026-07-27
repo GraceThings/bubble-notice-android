@@ -16,12 +16,8 @@
  */
 package io.github.gracethings.bubblenotice.util
 
-import android.app.AppOpsManager
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.drawable.toBitmap

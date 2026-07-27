@@ -64,7 +64,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(!isPreview) }
     
     var searchQuery by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Personal, 1 = Work
+    var selectedTab by remember { mutableStateOf(0) } // 0 = Personal, 1 = Work (0 = 个人，1 = 工作)
 
     LaunchedEffect(Unit) {
         if (!isPreview) {
@@ -74,7 +74,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             initialSelectedPackages = currentSelected
             isLoading = false
         } else {
-            // Preview data
+            // Preview data (预览数据)
             appList = listOf(
                 AppItem("Settings", "com.android.settings", ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!, false),
                 AppItem("Work App", "com.work.app", ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!, true)
@@ -85,7 +85,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
 
     val hasWorkApps = remember(appList) { appList.any { it.isWorkProfile } }
     
-    // Filter by tab and search
+    // Filter by tab and search (通过标签页和搜索进行过滤)
     val displayedApps = remember(appList, initialSelectedPackages, selectedTab, searchQuery, hasWorkApps) {
         val filtered = appList.filter { app ->
             val matchTab = if (!hasWorkApps) true else {
@@ -97,19 +97,19 @@ fun AppSelectorScreen(onBack: () -> Unit) {
         
         val (selected, unselected) = filtered.partition { initialSelectedPackages.contains(it.id) }
         
-        // Sort alphabetically
+        // Sort alphabetically (按字母顺序排序)
         val sortedSelected = selected.sortedBy { it.name }
         val sortedUnselected = unselected.sortedBy { it.name }
         
         sortedSelected + sortedUnselected
     }
 
-    // Alphabet index mapping
+    // Alphabet index mapping (字母索引映射)
     val alphabetMap = remember(displayedApps) {
         val map = mutableMapOf<String, Int>()
         displayedApps.forEachIndexed { index, app ->
             val firstChar = app.name.firstOrNull()?.uppercase() ?: "#"
-            // If it's not A-Z, map to #
+            // If it's not A-Z, map to # (如果不是A-Z，则映射到 #)
             val key = if (firstChar.matches(Regex("[A-Z]"))) firstChar else "#"
             if (!map.containsKey(key)) {
                 map[key] = index
@@ -122,7 +122,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top Bar
+        // Top Bar (顶部栏)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -146,7 +146,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             }
         }
 
-        // Search Bar
+        // Search Bar (搜索栏)
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -173,7 +173,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             )
         )
 
-        // Tabs
+        // Tabs (标签页)
         if (hasWorkApps) {
             Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
                 ButtonGroup(
@@ -244,7 +244,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                     }
                 }
 
-                // Alphabet scroll bar
+                // Alphabet scroll bar (字母滚动条)
                 var dragActive by remember { mutableStateOf(false) }
                 var currentDragChar by remember { mutableStateOf<String?>(null) }
                 var currentDragY by remember { mutableStateOf(0f) }
@@ -317,7 +317,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                         }
                     }
 
-                    // The floating indicator
+                    // The floating indicator (浮动指示器)
                     if (dragActive && currentDragChar != null) {
                         Box(
                             modifier = Modifier
