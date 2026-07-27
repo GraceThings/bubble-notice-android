@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -698,7 +698,8 @@ class BubbleActivity : ComponentActivity() {
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+                LoadingIndicator()
             }
         } else if (filteredAppList.isEmpty()) {
             Column(

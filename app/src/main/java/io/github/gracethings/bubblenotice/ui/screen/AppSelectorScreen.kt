@@ -51,7 +51,7 @@ import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppSelectorScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -175,26 +175,30 @@ fun AppSelectorScreen(onBack: () -> Unit) {
 
         // Tabs
         if (hasWorkApps) {
-            PrimaryTabRow(selectedTabIndex = selectedTab) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Personal") }
-                )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("Work") }
-                )
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
+                ButtonGroup(
+                    modifier = Modifier.fillMaxWidth(),
+                    overflowIndicator = { m -> ButtonGroupDefaults.OverflowIndicator(m) }
+                ) {
+                    toggleableItem(
+                        checked = selectedTab == 0,
+                        onCheckedChange = { selectedTab = 0 },
+                        label = "Personal",
+                        weight = 1f
+                    )
+                    toggleableItem(
+                        checked = selectedTab == 1,
+                        onCheckedChange = { selectedTab = 1 },
+                        label = "Work",
+                        weight = 1f
+                    )
+                }
             }
         }
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(48.dp),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                LoadingIndicator(modifier = Modifier.size(48.dp))
             }
         } else {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -233,10 +237,9 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                                         modifier = Modifier.size(44.dp)
                                     )
                                 },
-                                headlineContent = { Text(app.name, fontWeight = FontWeight.Bold) },
                                 supportingContent = { Text(app.packageName, style = MaterialTheme.typography.labelMedium) },
                                 trailingContent = { Switch(checked = isSelected, onCheckedChange = null) }
-                            )
+                            ) { Text(app.name, fontWeight = FontWeight.Bold) }
                         }
                     }
                 }
