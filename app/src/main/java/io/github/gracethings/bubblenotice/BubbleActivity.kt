@@ -203,8 +203,18 @@ class BubbleActivity : ComponentActivity() {
                                     androidx.compose.material3.FloatingActionButton(
                                         onClick = {
                                             if (selectedTab == 0) {
-                                                UnreadMessageManager.clearAll()
-                                            } else {
+                                                  coroutineScope.launch {
+                                                      val snapshotKeys = messages.groupBy { it.packageName to it.senderName }
+                                                          .map { (key, msgList) -> key to (msgList.maxOfOrNull { it.timestamp } ?: 0L) }
+                                                          .sortedByDescending { it.second }
+                                                          .map { it.first }
+
+                                                      for (key in snapshotKeys) {
+                                                          UnreadMessageManager.clearMessagesForSender(key.first, key.second)
+                                                          kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect
+                                                      }
+                                                  }
+                                              } else {
                                                 showAppSelector = true
                                             }
                                         },
