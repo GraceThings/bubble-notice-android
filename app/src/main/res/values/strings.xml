@@ -49,4 +49,13 @@
     <string name="pin_tutorial_text">💡 Long press an app icon to pin it</string>
     <string name="about_license">License</string>
     <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="notif_channel_name">Bubble Notifications</string>
+    <string name="notif_dynamic_msg">Tap to open</string>
+    <string name="tab_unread_messages">Unread Messages (%1$d)</string>
+    <string name="btn_clear_all">Clear All</string>
+    <string name="btn_view_more">View More</string>
+    <string name="btn_collapse">Collapse</string>
+    <string name="default_action">Action</string>
+    <string name="reply_placeholder">Reply...</string>
+    <string name="send_action">Send</string>
 </resources>
