@@ -177,6 +177,46 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         }
     }
 
+
+    private fun createCircularIcon(context: android.content.Context, originalIcon: android.graphics.drawable.Icon): androidx.core.graphics.drawable.IconCompat {
+        val drawable = originalIcon.loadDrawable(context)
+            ?: return androidx.core.graphics.drawable.IconCompat.createFromIcon(context, originalIcon)!!
+        
+        var bitmap = if (drawable is android.graphics.drawable.BitmapDrawable) {
+            drawable.bitmap
+        } else {
+            val bmp = android.graphics.Bitmap.createBitmap(Math.max(drawable.intrinsicWidth, 144), Math.max(drawable.intrinsicHeight, 144), android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bmp)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            bmp
+        }
+
+        val size = Math.min(bitmap.width, bitmap.height)
+        val output = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(output)
+        val paint = android.graphics.Paint().apply {
+            isAntiAlias = true
+        }
+        val rect = android.graphics.Rect(0, 0, size, size)
+        val rectF = android.graphics.RectF(rect)
+
+        canvas.drawARGB(0, 0, 0, 0)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+        
+        // Center crop
+        val srcRect = android.graphics.Rect(
+            (bitmap.width - size) / 2,
+            (bitmap.height - size) / 2,
+            (bitmap.width + size) / 2,
+            (bitmap.height + size) / 2
+        )
+        canvas.drawBitmap(bitmap, srcRect, rect, paint)
+
+        return androidx.core.graphics.drawable.IconCompat.createWithBitmap(output)
+    }
+
     private fun updateMainBubble(
         pkg: String,
         pkgId: String,
@@ -196,7 +236,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         val icon = if (originalLargeIcon != null) {
             try {
-                IconCompat.createFromIcon(this, originalLargeIcon)!!
+                createCircularIcon(this, originalLargeIcon)
             } catch (e: Exception) {
                 // Fallback to app icon if conversion fails (如果转换失败，则回退到应用图标)
                 val appIconDrawable = try {
