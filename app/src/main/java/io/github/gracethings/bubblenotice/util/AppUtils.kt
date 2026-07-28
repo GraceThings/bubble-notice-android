@@ -40,6 +40,7 @@ object AppUtils {
     // 临时拉起目标状?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
     private var pendingAutoJumpTimestamp: Long = 0L
+    private var pendingAutoJumpPkgId: String? = null
 
     fun hasShownPinTutorial(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -183,21 +184,24 @@ object AppUtils {
         return false
     }
 
-    fun setPendingAutoJump(intent: android.app.PendingIntent?) {
+    fun setPendingAutoJump(intent: android.app.PendingIntent?, pkgId: String?) {
         pendingAutoJumpIntent = intent
+        pendingAutoJumpPkgId = pkgId
         pendingAutoJumpTimestamp = if (intent != null) System.currentTimeMillis() else 0L
     }
 
-    fun consumePendingAutoJump(): android.app.PendingIntent? {
+    fun consumePendingAutoJump(): Pair<android.app.PendingIntent, String?>? {
         val target = pendingAutoJumpIntent
         val timestamp = pendingAutoJumpTimestamp
+        val pkgId = pendingAutoJumpPkgId
         pendingAutoJumpIntent = null
         pendingAutoJumpTimestamp = 0L
+        pendingAutoJumpPkgId = null
         
         // 6000ms 阈值：只在气泡刚刚弹出（flyout 显示阶段）点击时触发自动跳转。
         // 结束后点击气泡本身，将只展开气泡不自动跳转。
         if (target != null && System.currentTimeMillis() - timestamp <= 6000L) {
-            return target
+            return Pair(target, pkgId)
         }
         return null
     }

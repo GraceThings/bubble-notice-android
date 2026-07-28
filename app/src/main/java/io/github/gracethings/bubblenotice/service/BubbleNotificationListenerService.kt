@@ -32,6 +32,8 @@ import android.os.Process
 import androidx.core.graphics.drawable.toBitmap
 import io.github.gracethings.bubblenotice.BubbleActivity
 import io.github.gracethings.bubblenotice.MainActivity
+import io.github.gracethings.bubblenotice.ShortcutActivity
+
 import io.github.gracethings.bubblenotice.R
 import io.github.gracethings.bubblenotice.util.AppUtils
 import io.github.gracethings.bubblenotice.util.UnreadMessageManager
@@ -57,6 +59,35 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         private val packageStateMap = mutableMapOf<String, PackageState>()
         private var isBubbleDismissed = false
+
+        // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡
+        // Store last bubble notification data for suppressing shade while keeping bubble
+        private var lastBubbleIntent: PendingIntent? = null
+        private var lastBubbleIcon: IconCompat? = null
+        private var lastBuilder: NotificationCompat.Builder? = null
+
+        /**
+         * 仅隐藏通知栏中的通知，保留气泡
+         * Suppress the notification from the shade while keeping the bubble alive.
+         */
+        fun suppressNotificationInShade(context: android.content.Context) {
+            val builder = lastBuilder ?: return
+            val intent = lastBubbleIntent ?: return
+            val icon = lastBubbleIcon ?: return
+
+            val suppressed = NotificationCompat.BubbleMetadata.Builder(intent, icon)
+                .setDesiredHeight(600)
+                .setAutoExpandBubble(false)
+                .setSuppressNotification(true)
+                .build()
+
+            builder.setBubbleMetadata(suppressed)
+            try {
+                NotificationManagerCompat.from(context).notify(MAIN_BUBBLE_NOTIFICATION_ID, builder.build())
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -140,7 +171,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
-                        AppUtils.setPendingAutoJump(originalIntent)
+                        AppUtils.setPendingAutoJump(originalIntent, pkgId)
                     }
                 }
 
@@ -214,7 +245,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         )
         canvas.drawBitmap(bitmap, srcRect, rect, paint)
 
-        return androidx.core.graphics.drawable.IconCompat.createWithBitmap(output)
+        return androidx.core.graphics.drawable.IconCompat.createWithAdaptiveBitmap(output)
     }
 
     private fun updateMainBubble(
@@ -297,20 +328,24 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val style = NotificationCompat.MessagingStyle(chatPartner)
             .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
 
-        // 通知体意图 / Notification body intent: launch the target app directly.
-        val fallbackIntent = Intent(this, BubbleActivity::class.java).apply {
+        // "打开应用" 快捷操作意图 / "Open App" action intent: uses ShortcutActivity (separate task stack)
+        // 使用独立的 ShortcutActivity 而非 BubbleActivity，避免污染气泡的任务栈
+        val openAppIntent = Intent(this, ShortcutActivity::class.java).apply {
             action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
             putExtra("EXTRA_PACKAGE_NAME", pkgId)
+            if (originalIntent != null) {
+                putExtra("EXTRA_ORIGINAL_INTENT", originalIntent)
+            }
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-        val finalContentIntent = originalIntent ?: PendingIntent.getActivity(
-            this, pkgId.hashCode(), fallbackIntent,
+        val openAppPendingIntent = PendingIntent.getActivity(
+            this, pkgId.hashCode(), openAppIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val openAppAction = NotificationCompat.Action.Builder(
-            0, getString(R.string.action_open_app), finalContentIntent
+            0, getString(R.string.action_open_app), openAppPendingIntent
         ).build()
 
         val smallIconCompat = originalSmallIcon?.let {
@@ -321,10 +356,17 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
         }
 
+        // 通知体点击意图 / Notification body tap: open bubble normally (same as tapping the bubble icon)
+        // 不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈
+        val contentIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, BubbleActivity::class.java).apply { setPackage(packageName) },
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val builder = NotificationCompat.Builder(this, channelId)
             .setContentTitle(title)
             .setContentText(text)
-            .setContentIntent(finalContentIntent) // 点击通知主体 / Tap the notification body.
+            .setContentIntent(contentIntent) // 点击通知主体 → 正常打开气泡 / Tap notification body → open bubble normally
             .setStyle(style)
             .setBubbleMetadata(bubbleData)        // 绑定气泡入口 / Bind the bubble entry point.
             .setShortcutId(shortcutId)
@@ -369,6 +411,12 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 e.printStackTrace()
             }
         }
+
+        // 保存气泡数据，以便后续调用 suppressNotificationInShade
+        // Save bubble data for later suppression
+        lastBubbleIntent = bubbleIntent
+        lastBubbleIcon = icon
+        lastBuilder = builder
 
         try {
             NotificationManagerCompat.from(this).notify(MAIN_BUBBLE_NOTIFICATION_ID, builder.build())

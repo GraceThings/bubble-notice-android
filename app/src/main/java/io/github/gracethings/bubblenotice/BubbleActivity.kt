@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2026 Grace Chan <velviagris@outlook.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -71,6 +71,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import io.github.gracethings.bubblenotice.model.AppItem
+import io.github.gracethings.bubblenotice.util.AppLogger
 import io.github.gracethings.bubblenotice.util.AppUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -141,15 +142,26 @@ class BubbleActivity : ComponentActivity() {
                     val coroutineScope = rememberCoroutineScope()
                     val context = LocalContext.current
 
+                    val messages by UnreadMessageManager.messagesFlow.collectAsState()
+                    var selectedTab by remember { mutableStateOf(if (messages.isEmpty()) 1 else 0) }
+                    var showAppSelector by remember { mutableStateOf(false) }
+
                     DisposableEffect(lifecycleOwner) {
                         val observer = LifecycleEventObserver { _, event ->
                             if (event == Lifecycle.Event.ON_RESUME) {
-                                val pendingIntent = AppUtils.consumePendingAutoJump()
-                                if (pendingIntent != null) {
+                                selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
+                                
+                                val pendingData = AppUtils.consumePendingAutoJump()
+                                if (pendingData != null) {
+                                    val pendingIntent = pendingData.first
+                                    val targetPkgId = pendingData.second
                                     coroutineScope.launch {
                                         kotlinx.coroutines.delay(150)
                                         try {
                                             AppUtils.sendPendingIntentAllowed(this@BubbleActivity, pendingIntent)
+                                            if (targetPkgId != null) {
+                                                UnreadMessageManager.clearMessagesForPackage(targetPkgId)
+                                            }
                                             moveTaskToBack(true)
                                         } catch (e: Exception) {
                                             e.printStackTrace()
@@ -163,10 +175,6 @@ class BubbleActivity : ComponentActivity() {
                             lifecycleOwner.lifecycle.removeObserver(observer)
                         }
                     }
-
-                    val messages by UnreadMessageManager.messagesFlow.collectAsState()
-                    var selectedTab by remember { mutableStateOf(if (messages.isEmpty()) 1 else 0) }
-                    var showAppSelector by remember { mutableStateOf(false) }
 
                     // Sync state if messages list becomes empty/populated? (如果消息列表为空/填满，同步状态？) 
                     // To keep it simple, we only set it on launch. User can switch manually. (为了保持简单，我们仅在启动时设置。用户可以手动切换。)
@@ -257,23 +265,7 @@ class BubbleActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
-        
-        if (intent.action == "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP") {
-            val pkg = intent.getStringExtra("EXTRA_PACKAGE_NAME")
-            if (pkg != null) {
-                AppUtils.launchApp(this, pkg)
-                finish()
-                return
-            }
-        }
-        
-        val pkg = intent.getStringExtra("EXTRA_PACKAGE_NAME")
-        val title = intent.getStringExtra("EXTRA_TITLE")
-        val text = intent.getStringExtra("EXTRA_TEXT")
-        if (pkg != null && title != null && text != null) {
-            val msgTime = intent.getLongExtra("EXTRA_TIME", System.currentTimeMillis())
-            UnreadMessageManager.addMessage(pkg, title, text, msgTime)
-        }
+        AppLogger.d("BubbleActivity", "handleIntent called with action: ${intent.action}")
     }
 
     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)

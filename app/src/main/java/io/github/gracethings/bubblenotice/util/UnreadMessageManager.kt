@@ -66,6 +66,13 @@ object UnreadMessageManager {
             _messagesFlow.value = ArrayList(messagesList)
         }
     }
+    fun clearMessagesForPackage(packageName: String) {
+        synchronized(messagesList) {
+            messagesList.removeAll { it.packageName == packageName }
+            _messagesFlow.value = ArrayList(messagesList)
+        }
+    }
+
     fun clearMessagesForSender(packageName: String, senderName: String) {
         synchronized(messagesList) {
             messagesList.removeAll { it.packageName == packageName && it.senderName == senderName }

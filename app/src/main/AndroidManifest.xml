@@ -33,10 +33,17 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
+
         <activity
             android:name=".ShortcutActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.NoDisplay" />
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            
+        <receiver
+            android:name=".receiver.NotificationActionReceiver"
+            android:exported="false" />
 
         <activity
             android:name=".BubbleActivity"
