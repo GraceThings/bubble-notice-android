@@ -83,7 +83,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             AppLogger.d("BubbleService", "Intercepted notification from: $pkg")
             serviceScope.launch {
 
-                val appName = AppUtils.getAppName(this@BubbleNotificationListenerService, pkg)
+                val appName = AppUtils.getAppName(this@BubbleNotificationListenerService, pkgId)
                 val extras = notification.extras
                 val title = extras.getString(Notification.EXTRA_TITLE) ?: appName
                 var text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
