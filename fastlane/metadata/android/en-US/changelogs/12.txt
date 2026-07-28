@@ -1,0 +1,6 @@
+<ul>
+<li>Clean up project dependencies, remove unused resources.</li>
+<li>Implement expiration threshold for auto-jump intents.</li>
+<li>Refine app name retrieval logic.</li>
+<li>Implement circular icon processing for notification bubbles</li>
+</ul>
