@@ -171,7 +171,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
-                        AppUtils.setPendingAutoJump(originalIntent, pkgId)
+                        AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
                     }
                 }
 
@@ -333,6 +333,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val openAppIntent = Intent(this, ShortcutActivity::class.java).apply {
             action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
             putExtra("EXTRA_PACKAGE_NAME", pkgId)
+            putExtra("EXTRA_SENDER_NAME", title)
             if (originalIntent != null) {
                 putExtra("EXTRA_ORIGINAL_INTENT", originalIntent)
             }

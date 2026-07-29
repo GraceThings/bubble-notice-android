@@ -155,11 +155,15 @@ class BubbleActivity : ComponentActivity() {
                                 if (pendingData != null) {
                                     val pendingIntent = pendingData.first
                                     val targetPkgId = pendingData.second
+                                    val targetSenderName = pendingData.third
                                     coroutineScope.launch {
                                         kotlinx.coroutines.delay(150)
                                         try {
                                             AppUtils.sendPendingIntentAllowed(this@BubbleActivity, pendingIntent)
-                                            if (targetPkgId != null) {
+                                            if (targetPkgId != null && targetSenderName != null) {
+                                                // 仅清除该发送者的通知组 / Only clear this sender's notification group
+                                                UnreadMessageManager.clearMessagesForSender(targetPkgId, targetSenderName)
+                                            } else if (targetPkgId != null) {
                                                 UnreadMessageManager.clearMessagesForPackage(targetPkgId)
                                             }
                                             moveTaskToBack(true)

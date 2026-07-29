@@ -184,24 +184,34 @@ object AppUtils {
         return false
     }
 
-    fun setPendingAutoJump(intent: android.app.PendingIntent?, pkgId: String?) {
+    // 自动跳转待处理数据 / Pending auto-jump data
+    private var pendingAutoJumpSenderName: String? = null
+
+    fun setPendingAutoJump(intent: android.app.PendingIntent?, pkgId: String?, senderName: String? = null) {
         pendingAutoJumpIntent = intent
         pendingAutoJumpPkgId = pkgId
+        pendingAutoJumpSenderName = senderName
         pendingAutoJumpTimestamp = if (intent != null) System.currentTimeMillis() else 0L
     }
 
-    fun consumePendingAutoJump(): Pair<android.app.PendingIntent, String?>? {
+    /**
+     * 返回 Triple(PendingIntent, pkgId, senderName)
+     * Returns Triple(PendingIntent, pkgId, senderName)
+     */
+    fun consumePendingAutoJump(): Triple<android.app.PendingIntent, String?, String?>? {
         val target = pendingAutoJumpIntent
         val timestamp = pendingAutoJumpTimestamp
         val pkgId = pendingAutoJumpPkgId
+        val senderName = pendingAutoJumpSenderName
         pendingAutoJumpIntent = null
         pendingAutoJumpTimestamp = 0L
         pendingAutoJumpPkgId = null
+        pendingAutoJumpSenderName = null
         
         // 6000ms 阈值：只在气泡刚刚弹出（flyout 显示阶段）点击时触发自动跳转。
         // 结束后点击气泡本身，将只展开气泡不自动跳转。
         if (target != null && System.currentTimeMillis() - timestamp <= 6000L) {
-            return Pair(target, pkgId)
+            return Triple(target, pkgId, senderName)
         }
         return null
     }

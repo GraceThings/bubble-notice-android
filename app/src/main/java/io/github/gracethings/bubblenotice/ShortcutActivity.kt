@@ -41,8 +41,14 @@ class ShortcutActivity : Activity() {
         }
 
         if (pkg != null) {
-            AppLogger.d("ShortcutActivity", "Clearing messages for pkg: $pkg")
-            UnreadMessageManager.clearMessagesForPackage(pkg)
+            val senderName = intent.getStringExtra("EXTRA_SENDER_NAME")
+            if (senderName != null) {
+                AppLogger.d("ShortcutActivity", "Clearing messages for sender: $pkg / $senderName")
+                UnreadMessageManager.clearMessagesForSender(pkg, senderName)
+            } else {
+                AppLogger.d("ShortcutActivity", "Clearing all messages for pkg: $pkg")
+                UnreadMessageManager.clearMessagesForPackage(pkg)
+            }
 
             if (originalIntent != null) {
                 AppLogger.d("ShortcutActivity", "Sending original intent")
