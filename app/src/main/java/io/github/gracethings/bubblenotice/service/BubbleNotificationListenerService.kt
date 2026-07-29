@@ -245,7 +245,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         )
         canvas.drawBitmap(bitmap, srcRect, rect, paint)
 
-        return androidx.core.graphics.drawable.IconCompat.createWithAdaptiveBitmap(output)
+        return androidx.core.graphics.drawable.IconCompat.createWithBitmap(output)
     }
 
     private fun updateMainBubble(
