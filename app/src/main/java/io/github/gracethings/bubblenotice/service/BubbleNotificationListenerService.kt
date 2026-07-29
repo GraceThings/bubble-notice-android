@@ -105,6 +105,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         if (sbn.isOngoing || (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0)) {
             return
         }
+
+        // 跳过全屏通知（来电、闹钟、计时器等），避免黑屏/卡死
+        // Skip full-screen notifications (calls, alarms, timers) to prevent black screen bugs.
+        if (notification.fullScreenIntent != null) {
+            AppLogger.d("BubbleService", "Skipped full-screen notification from: ${sbn.packageName}")
+            return
+        }
         
         val isWorkProfile = sbn.user != android.os.Process.myUserHandle()
         val pkgId = "${pkg}:${if (isWorkProfile) 1 else 0}"
