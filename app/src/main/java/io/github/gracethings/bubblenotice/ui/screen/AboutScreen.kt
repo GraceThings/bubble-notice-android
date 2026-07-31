@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,11 +52,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -84,6 +100,16 @@ fun AboutScreen() {
     val uriHandler = LocalUriHandler.current
     val dateFormat = remember { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()) }
     val logFileName = remember { "BubbleNotice_Logs_${dateFormat.format(Date())}.txt" }
+
+    var isIconVisible by remember { mutableStateOf(false) }
+    var isFlyoutVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(300) // Wait for page transition
+        isIconVisible = true
+        delay(150) // Wait for icon to start popping up before showing flyout
+        isFlyoutVisible = true
+    }
 
     val exportLogsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
@@ -120,49 +146,121 @@ fun AboutScreen() {
             modifier = Modifier.padding(top = 32.dp, bottom = 16.dp)
         )
 
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+        val interactionSource = remember { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+        
+        val iconScale by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isIconVisible) 1f else 0f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
             ),
-            modifier = Modifier.fillMaxWidth()
+            label = "IconScale"
+        )
+        
+        val flyoutScale by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isFlyoutVisible) 1f else 0f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "FlyoutScale"
+        )
+        
+        val flyoutAlpha by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isFlyoutVisible) 1f else 0f,
+            animationSpec = tween(300),
+            label = "FlyoutAlpha"
+        )
+
+        val pressScale by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isPressed) 0.95f else 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "PressScale"
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = {}
+                ),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp, horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            // App Round Icon
+            if (iconScale > 0f) {
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(64.dp)
+                        .graphicsLayer {
+                            scaleX = iconScale
+                            scaleY = iconScale
+                        }
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_launcher_foreground),
                         contentDescription = stringResource(R.string.app_name),
-                        modifier = Modifier.size(56.dp),
+                        modifier = Modifier.size(48.dp),
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.primary)
                     )
                 }
+            } else {
+                Spacer(modifier = Modifier.size(64.dp))
+            }
 
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Text(
-                    text = stringResource(R.string.about_version_format, BuildConfig.VERSION_NAME),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                )
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Bubble Notification Flyout
+            if (flyoutAlpha > 0f) {
+                Card(
+                    shape = RoundedCornerShape(
+                        topStart = 4.dp,
+                        topEnd = 24.dp,
+                        bottomEnd = 24.dp,
+                        bottomStart = 24.dp
+                    ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .graphicsLayer {
+                            scaleX = flyoutScale
+                            scaleY = flyoutScale
+                            alpha = flyoutAlpha
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = stringResource(R.string.about_version_format, BuildConfig.VERSION_NAME),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                }
             }
         }
 
