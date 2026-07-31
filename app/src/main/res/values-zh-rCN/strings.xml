@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bubble Notice</string>
     <string name="tab_settings">设置</string>
@@ -58,5 +58,11 @@
     <string name="send_action">发送</string>
     <string name="about_license">开源许可</string>
     <string name="about_privacy_policy">隐私政策</string>
+    <string name="about_section_feedback">反馈</string>
+    <string name="about_subtitle_project_url">GitHub</string>
+    <string name="about_subtitle_bug_report">提交 Issue</string>
+    <string name="about_subtitle_license">GPL-3.0</string>
+    <string name="about_subtitle_privacy_policy">查看安全策略</string>
+    <string name="about_subtitle_export_logs">将调试日志保存到文件</string>
 </resources>
 

@@ -58,4 +58,10 @@
     <string name="send_action">보내기</string>
     <string name="about_license">라이선스</string>
     <string name="about_privacy_policy">개인정보 처리방침</string>
+    <string name="about_section_feedback">피드백</string>
+    <string name="about_subtitle_project_url">GitHub</string>
+    <string name="about_subtitle_bug_report">Issue 제출</string>
+    <string name="about_subtitle_license">GPL-3.0</string>
+    <string name="about_subtitle_privacy_policy">보안 정책 보기</string>
+    <string name="about_subtitle_export_logs">디버그 로그를 파일로 저장</string>
 </resources>

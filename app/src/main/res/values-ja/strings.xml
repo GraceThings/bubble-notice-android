@@ -58,4 +58,10 @@
     <string name="send_action">送信</string>
     <string name="about_license">ライセンス</string>
     <string name="about_privacy_policy">プライバシーポリシー</string>
+    <string name="about_section_feedback">フィードバック</string>
+    <string name="about_subtitle_project_url">GitHub</string>
+    <string name="about_subtitle_bug_report">Issue を報告</string>
+    <string name="about_subtitle_license">GPL-3.0</string>
+    <string name="about_subtitle_privacy_policy">セキュリティポリシーを表示</string>
+    <string name="about_subtitle_export_logs">デバッグログをファイルに保存</string>
 </resources>

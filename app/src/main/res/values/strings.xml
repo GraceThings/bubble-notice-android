@@ -58,4 +58,10 @@
     <string name="default_action">Action</string>
     <string name="reply_placeholder">Reply...</string>
     <string name="send_action">Send</string>
+    <string name="about_section_feedback">Feedback</string>
+    <string name="about_subtitle_project_url">GitHub</string>
+    <string name="about_subtitle_bug_report">Open an issue</string>
+    <string name="about_subtitle_license">GPL-3.0</string>
+    <string name="about_subtitle_privacy_policy">View security policy</string>
+    <string name="about_subtitle_export_logs">Save debug logs to file</string>
 </resources>

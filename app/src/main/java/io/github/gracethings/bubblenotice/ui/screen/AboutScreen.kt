@@ -191,20 +191,15 @@ fun AboutScreen() {
             AboutListItem(
                 icon = { Icon(Icons.Default.Code, contentDescription = null) },
                 title = stringResource(R.string.about_project_url),
+                subtitle = stringResource(R.string.about_subtitle_project_url),
                 showTrailingArrow = true,
                 shape = middleShape,
                 onClick = { uriHandler.openUri(PROJECT_URL) }
             )
             AboutListItem(
-                icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
-                title = stringResource(R.string.about_bug_report),
-                showTrailingArrow = true,
-                shape = middleShape,
-                onClick = { uriHandler.openUri(ISSUES_URL) }
-            )
-            AboutListItem(
                 icon = { Icon(Icons.Default.Description, contentDescription = null) },
                 title = stringResource(R.string.about_license),
+                subtitle = stringResource(R.string.about_subtitle_license),
                 showTrailingArrow = true,
                 shape = middleShape,
                 onClick = { uriHandler.openUri(LICENSE_URL) }
@@ -212,13 +207,40 @@ fun AboutScreen() {
             AboutListItem(
                 icon = { Icon(Icons.Default.Security, contentDescription = null) },
                 title = stringResource(R.string.about_privacy_policy),
+                subtitle = stringResource(R.string.about_subtitle_privacy_policy),
                 showTrailingArrow = true,
-                shape = middleShape,
+                shape = bottomShape,
                 onClick = { uriHandler.openUri(PRIVACY_URL) }
+            )
+        }
+
+        // Feedback 分区 / Feedback section
+        Text(
+            text = stringResource(R.string.about_section_feedback),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 8.dp)
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val topShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+            val bottomShape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+
+            AboutListItem(
+                icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                title = stringResource(R.string.about_bug_report),
+                subtitle = stringResource(R.string.about_subtitle_bug_report),
+                showTrailingArrow = true,
+                shape = topShape,
+                onClick = { uriHandler.openUri(ISSUES_URL) }
             )
             AboutListItem(
                 icon = { Icon(Icons.Default.Download, contentDescription = null) },
                 title = stringResource(R.string.about_export_logs),
+                subtitle = stringResource(R.string.about_subtitle_export_logs),
                 showTrailingArrow = true,
                 shape = bottomShape,
                 onClick = { exportLogsLauncher.launch(logFileName) }

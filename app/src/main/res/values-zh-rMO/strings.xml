@@ -58,4 +58,10 @@
     <string name="send_action">發送</string>
     <string name="about_license">開源許可</string>
     <string name="about_privacy_policy">隱私政策</string>
+    <string name="about_section_feedback">回饋</string>
+    <string name="about_subtitle_project_url">GitHub</string>
+    <string name="about_subtitle_bug_report">提交 Issue</string>
+    <string name="about_subtitle_license">GPL-3.0</string>
+    <string name="about_subtitle_privacy_policy">查看安全性政策</string>
+    <string name="about_subtitle_export_logs">將偵錯日誌儲存至檔案</string>
 </resources>
