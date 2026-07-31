@@ -36,6 +36,7 @@ object AppUtils {
     private const val KEY_TAKE_OVER_NOTIFICATIONS = "take_over_notifications"
     private const val KEY_AUTO_JUMP = "auto_jump_enabled"
     private const val KEY_BUBBLE_DND = "bubble_dnd_enabled"
+    private const val KEY_EXPERIMENTAL_COLLAPSE = "experimental_collapse_enabled"
 
     // 临时拉起目标状?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
@@ -277,13 +278,25 @@ object AppUtils {
         return prefs.getBoolean(KEY_AUTO_JUMP, false)
     }
 
-    // 保存自动跳转开�?/ Save the auto jump toggle.
+    // 保存自动跳转开?/ Save the auto jump toggle.
     fun setAutoJumpEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_AUTO_JUMP, enabled) }
     }
 
-    // 读取气泡免打扰开�?/ Read the bubble DND toggle. Default is false (always popup).
+    // 读取实验性气泡折叠开关
+    fun isExperimentalCollapseEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_EXPERIMENTAL_COLLAPSE, false)
+    }
+
+    // 保存实验性气泡折叠开关
+    fun setExperimentalCollapseEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_EXPERIMENTAL_COLLAPSE, enabled) }
+    }
+
+    // 读取气泡免打扰开?/ Read the bubble DND toggle. Default is false (always popup).
     fun isBubbleDndModeEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_BUBBLE_DND, false)

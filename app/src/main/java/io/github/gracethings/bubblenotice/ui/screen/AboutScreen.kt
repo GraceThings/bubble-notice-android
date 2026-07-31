@@ -45,6 +45,11 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CleaningServices
+import android.content.Intent
+import android.provider.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -103,6 +108,7 @@ fun AboutScreen() {
 
     var isIconVisible by remember { mutableStateOf(false) }
     var isFlyoutVisible by remember { mutableStateOf(false) }
+    var showClearCacheDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(300) // Wait for page transition
@@ -342,6 +348,57 @@ fun AboutScreen() {
                 showTrailingArrow = true,
                 shape = bottomShape,
                 onClick = { exportLogsLauncher.launch(logFileName) }
+            )
+        }
+
+        // Debug 分区 / Debug section
+        Text(
+            text = stringResource(R.string.about_section_debug),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 8.dp)
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val singleShape = RoundedCornerShape(24.dp)
+
+            AboutListItem(
+                icon = { Icon(Icons.Default.CleaningServices, contentDescription = null) },
+                title = stringResource(R.string.about_clear_bubble_cache),
+                subtitle = stringResource(R.string.about_subtitle_clear_bubble_cache),
+                showTrailingArrow = false,
+                shape = singleShape,
+                onClick = { showClearCacheDialog = true }
+            )
+        }
+
+        if (showClearCacheDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearCacheDialog = false },
+                title = { Text(text = stringResource(R.string.dialog_clear_cache_title)) },
+                text = { Text(text = stringResource(R.string.dialog_clear_cache_message)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showClearCacheDialog = false
+                        try {
+                            val intent = Intent("android.settings.NOTIFICATION_SETTINGS")
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(Settings.ACTION_SETTINGS)
+                            context.startActivity(intent)
+                        }
+                    }) {
+                        Text(text = stringResource(R.string.dialog_clear_cache_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearCacheDialog = false }) {
+                        Text(text = stringResource(R.string.dialog_clear_cache_cancel))
+                    }
+                }
             )
         }
 

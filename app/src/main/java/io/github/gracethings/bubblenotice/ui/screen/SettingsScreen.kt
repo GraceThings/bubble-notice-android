@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.ui.draw.scale
 import androidx.compose.animation.animateColorAsState
@@ -56,13 +57,14 @@ import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 
 @Composable
 fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> Unit) {
+    val context = LocalContext.current
     var selectedCount by remember { mutableStateOf(0) }
     var hasListenerPermission by remember { mutableStateOf(false) }
-    var isTakeOver by remember { mutableStateOf(false) }
-    var isAutoJump by remember { mutableStateOf(false) }
+    var isTakeOver by remember { mutableStateOf(AppUtils.isTakeOverNotifications(context)) }
+    var isAutoJump by remember { mutableStateOf(AppUtils.isAutoJumpEnabled(context)) }
+    var isExperimentalCollapse by remember { mutableStateOf(AppUtils.isExperimentalCollapseEnabled(context)) }
     var showGuideDialog by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val isPreview = androidx.compose.ui.platform.LocalInspectionMode.current
 
@@ -177,6 +179,19 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     AppUtils.setAutoJumpEnabled(context, it)
                 }
             )
+
+            AnimatedVisibility(visible = isAutoJump) {
+                SettingSwitchCard(
+                    title = stringResource(R.string.setting_experimental_collapse_title),
+                    subtitle = stringResource(R.string.setting_experimental_collapse_desc),
+                    checked = isExperimentalCollapse,
+                    shape = middleShape,
+                    onCheckedChange = {
+                        isExperimentalCollapse = it
+                        AppUtils.setExperimentalCollapseEnabled(context, it)
+                    }
+                )
+            }
 
             SettingSwitchCard(
                 title = stringResource(R.string.setting_take_over_title),

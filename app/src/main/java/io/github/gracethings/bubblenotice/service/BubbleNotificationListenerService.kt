@@ -270,7 +270,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         actions: List<android.app.Notification.Action> = emptyList()
     ) {
         val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
-        val shortcutId = "bubble_notice_shortcut"
+        val shortcutId = "bubble_notice_shortcut_${pkgId}"
 
         val icon = if (originalLargeIcon != null) {
             try {
@@ -381,8 +381,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .addPerson(chatPartner)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
-            .setOnlyAlertOnce(isUpdate) // 更新时静�?/ Quietly update repeated messages.
-            .setAutoCancel(true)        // 点击后清除通知 / Clear after tapping the notification.
+            .setOnlyAlertOnce(isUpdate) // 更新时静?/ Quietly update repeated messages.
             .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
 
         actions.forEach { nativeAction ->

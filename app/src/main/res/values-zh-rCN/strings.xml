@@ -64,5 +64,14 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">查看安全策略</string>
     <string name="about_subtitle_export_logs">将调试日志保存到文件</string>
+    <string name="about_section_debug">调试</string>
+    <string name="about_clear_bubble_cache">清除气泡缓存</string>
+    <string name="about_subtitle_clear_bubble_cache">修复幽灵气泡</string>
+    <string name="dialog_clear_cache_title">清除 System UI 气泡缓存</string>
+    <string name="dialog_clear_cache_message">为了清除由 System UI 漏洞引起的幽灵气泡缓存，请按照以下步骤手动操作：\n\n1. 进入 设置 -> 通知 -> 气泡。\n2. 关闭全局气泡功能。\n3. 重启手机。\n4. 将气泡功能重新打开。\n\n这将彻底清除已损坏的系统缓存。</string>
+    <string name="dialog_clear_cache_confirm">前往设置</string>
+    <string name="dialog_clear_cache_cancel">取消</string>
+    <string name="setting_experimental_collapse_title">(实验性) 跳转后折叠气泡</string>
+    <string name="setting_experimental_collapse_desc">此功能可能会引起 System UI 显示问题</string>
 </resources>
 

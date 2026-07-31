@@ -64,4 +64,13 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">View security policy</string>
     <string name="about_subtitle_export_logs">Save debug logs to file</string>
+    <string name="about_section_debug">Debug</string>
+    <string name="about_clear_bubble_cache">Clear Bubble Cache</string>
+    <string name="about_subtitle_clear_bubble_cache">Fix phantom bubbles</string>
+    <string name="dialog_clear_cache_title">Clear System UI Bubble Cache</string>
+    <string name="dialog_clear_cache_message">To clear the phantom bubble cache caused by System UI bugs, please follow these manual steps:\n\n1. Go to Settings -> Notifications -> Bubbles.\n2. Turn off the global Bubbles feature.\n3. Restart your phone.\n4. Turn Bubbles back on.\n\nThis will completely purge the corrupted System UI cache.</string>
+    <string name="dialog_clear_cache_confirm">Go to Settings</string>
+    <string name="dialog_clear_cache_cancel">Cancel</string>
+    <string name="setting_experimental_collapse_title">Experimental: Collapse Bubble</string>
+    <string name="setting_experimental_collapse_desc">This may cause System UI display issues</string>
 </resources>

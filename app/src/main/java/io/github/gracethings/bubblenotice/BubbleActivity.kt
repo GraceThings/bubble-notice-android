@@ -42,9 +42,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -126,6 +128,7 @@ enum class RevealValue { Default, Revealed }
 
 class BubbleActivity : ComponentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
@@ -149,6 +152,7 @@ class BubbleActivity : ComponentActivity() {
                     DisposableEffect(lifecycleOwner) {
                         val observer = LifecycleEventObserver { _, event ->
                             if (event == Lifecycle.Event.ON_RESUME) {
+                                io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.suppressNotificationInShade(this@BubbleActivity)
                                 selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
                                 
                                 val pendingData = AppUtils.consumePendingAutoJump()
@@ -166,7 +170,9 @@ class BubbleActivity : ComponentActivity() {
                                             } else if (targetPkgId != null) {
                                                 UnreadMessageManager.clearMessagesForPackage(targetPkgId)
                                             }
-                                            moveTaskToBack(true)
+                                            if (AppUtils.isExperimentalCollapseEnabled(this@BubbleActivity)) {
+                                                this@BubbleActivity.moveTaskToBack(true)
+                                            }
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                         }
@@ -441,7 +447,7 @@ class BubbleActivity : ComponentActivity() {
                         UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
                         coroutineScope.launch {
                             kotlinx.coroutines.delay(100)
-                            (context as? android.app.Activity)?.moveTaskToBack(true)
+                            (context as? android.app.Activity)?.finish()
                         }
                     },
                 shape = shape,
@@ -815,6 +821,7 @@ class BubbleActivity : ComponentActivity() {
         onTutorialDismiss: () -> Unit = {},
         onPinnedChange: (Set<String>) -> Unit
     ) {
+        val coroutineScope = rememberCoroutineScope()
         val infiniteTransition = rememberInfiniteTransition(label = "pulse")
         val pulseScale by infiniteTransition.animateFloat(
             initialValue = 1f,
@@ -842,7 +849,10 @@ class BubbleActivity : ComponentActivity() {
                 .combinedClickable(
                     onClick = {
                         AppUtils.launchApp(context, app.id)
-                        (context as? android.app.Activity)?.moveTaskToBack(true)
+                        coroutineScope.launch {
+                            kotlinx.coroutines.delay(100)
+                            (context as? android.app.Activity)?.finish()
+                        }
                     },
                     onLongClick = {
                         val newSelection = pinnedPackages.toMutableSet()

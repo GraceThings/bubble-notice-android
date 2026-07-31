@@ -64,4 +64,13 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">查看安全性政策</string>
     <string name="about_subtitle_export_logs">將偵錯日誌儲存至檔案</string>
+    <string name="about_section_debug">除錯</string>
+    <string name="about_clear_bubble_cache">清除對話泡泡快取</string>
+    <string name="about_subtitle_clear_bubble_cache">修復幽靈泡泡</string>
+    <string name="dialog_clear_cache_title">清除 System UI 泡泡快取</string>
+    <string name="dialog_clear_cache_message">為了清除由 System UI 漏洞引起的幽靈泡泡快取，請按照以下步驟手動操作：\n\n1. 進入 設定 -> 通知 -> 對話泡泡。\n2. 關閉全域對話泡泡功能。\n3. 重新啟動手機。\n4. 將對話泡泡功能重新打開。\n\n這將徹底清除已損壞的系統快取。</string>
+    <string name="dialog_clear_cache_confirm">前往設定</string>
+    <string name="dialog_clear_cache_cancel">取消</string>
+    <string name="setting_experimental_collapse_title">(實驗性) 跳轉後收合泡泡</string>
+    <string name="setting_experimental_collapse_desc">此功能可能會引起 System UI 顯示問題</string>
 </resources>
