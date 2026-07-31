@@ -1,0 +1,7 @@
+<ul>
+<li>Add some animations.</li>
+<li>Fix phantom bubbles persisting due to System UI caching by utilizing dynamic shortcut IDs.</li>
+<li>Add a Debug section in Settings to guide users in clearing corrupted bubble caches.</li>
+<li>Fix an issue where bubbles incorrectly disappear when using Auto Jump from the notification shade.</li>
+<li>Introduce an experimental "Collapse Bubble" fallback setting for Auto Jump on older Android versions.</li>
+</ul>
