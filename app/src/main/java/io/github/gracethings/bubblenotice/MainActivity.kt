@@ -37,6 +37,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
@@ -175,13 +180,28 @@ class MainActivity : ComponentActivity() {
                         if (showSelector) {
                             AppSelectorScreen(onBack = { showSelector = false })
                         } else {
-                            if (currentTab == "settings") {
-                                SettingsScreen(
-                                    onNavigateToSelector = { showSelector = true },
-                                    onSendNotification = { sendBubbleNotification(this@MainActivity) }
-                                )
-                            } else {
-                                AboutScreen()
+                            AnimatedContent(
+                                targetState = currentTab,
+                                transitionSpec = {
+                                    val direction = if (targetState == "about") 1 else -1
+                                    slideInHorizontally(
+                                        animationSpec = tween(300),
+                                        initialOffsetX = { fullWidth -> direction * fullWidth }
+                                    ) togetherWith slideOutHorizontally(
+                                        animationSpec = tween(300),
+                                        targetOffsetX = { fullWidth -> -direction * fullWidth }
+                                    )
+                                },
+                                label = "TabTransition"
+                            ) { tab ->
+                                if (tab == "settings") {
+                                    SettingsScreen(
+                                        onNavigateToSelector = { showSelector = true },
+                                        onSendNotification = { sendBubbleNotification(this@MainActivity) }
+                                    )
+                                } else {
+                                    AboutScreen()
+                                }
                             }
                         }
                     }
