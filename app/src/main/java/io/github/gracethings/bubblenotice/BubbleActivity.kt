@@ -82,6 +82,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
@@ -197,7 +199,19 @@ class BubbleActivity : ComponentActivity() {
                                     onBack = { showAppSelector = false }
                                 )
                             } else {
-                                Crossfade(targetState = selectedTab, label = "BubbleTabTransition") { tab ->
+                                androidx.compose.animation.AnimatedContent(
+                                    targetState = selectedTab,
+                                    transitionSpec = {
+                                        if (targetState > initialState) {
+                                            (androidx.compose.animation.slideInHorizontally { width -> width } + androidx.compose.animation.fadeIn())
+                                                .togetherWith(androidx.compose.animation.slideOutHorizontally { width -> -width } + androidx.compose.animation.fadeOut())
+                                        } else {
+                                            (androidx.compose.animation.slideInHorizontally { width -> -width } + androidx.compose.animation.fadeIn())
+                                                .togetherWith(androidx.compose.animation.slideOutHorizontally { width -> width } + androidx.compose.animation.fadeOut())
+                                        }
+                                    },
+                                    label = "BubbleTabTransition"
+                                ) { tab ->
                                     when (tab) {
                                         0 -> UnreadMessagesDashboard(isLandscape = isLandscape)
                                         1 -> AppSelectionContent(isLandscape)
