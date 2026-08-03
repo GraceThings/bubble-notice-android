@@ -55,14 +55,6 @@ A lightweight bubble notice tool, providing more intuitive notifications for the
 - **Distraction-Free**: Easily dismiss bubbles anytime to maintain focus
 - **Fullscreen Friendly**: Hides by default during fullscreen playback just like native bubbles, and can be shown alongside notifications or by manually swiping from the screen edge
 
-## Install from Google Play
-
-A huge thank you to everyone who helps me pass the Closed Testing! :)
-
-1. Join the [Testing Group](https://groups.google.com/g/gracethings-testing-group).
-2. Opt-in to the test on the [Web](https://play.google.com/apps/testing/io.github.gracethings.bubblenotice).
-3. Download and install from [Google Play](https://play.google.com/store/apps/details?id=io.github.gracethings.bubblenotice).
-
 ## How to use
 
 1. Allow reading "Notification Access"
