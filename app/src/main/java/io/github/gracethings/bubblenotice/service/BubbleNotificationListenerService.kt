@@ -270,7 +270,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         actions: List<android.app.Notification.Action> = emptyList()
     ) {
         val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
-        val shortcutId = "bubble_notice_shortcut_${pkgId}"
+        val shortcutId = "bubble_notice_shortcut"
 
         val icon = if (originalLargeIcon != null) {
             try {
