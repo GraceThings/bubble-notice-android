@@ -112,6 +112,16 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             AppLogger.d("BubbleService", "Skipped full-screen notification from: ${sbn.packageName}")
             return
         }
+
+        // 跳过通话类通知（语音/视频来电等），部分应用（如微信）不使用 fullScreenIntent，
+        // 但会设置 CATEGORY_CALL。接管此类通知会导致 SystemUI 气泡渲染管线污染。
+        // Skip call-category notifications. Some apps (e.g. WeChat) don't use fullScreenIntent
+        // but do set CATEGORY_CALL. Intercepting these corrupts the SystemUI bubble pipeline.
+        if (notification.category == Notification.CATEGORY_CALL ||
+            notification.category == Notification.CATEGORY_MISSED_CALL) {
+            AppLogger.d("BubbleService", "Skipped call notification from: ${sbn.packageName} (category=${notification.category})")
+            return
+        }
         
         val isWorkProfile = sbn.user != android.os.Process.myUserHandle()
         val pkgId = "${pkg}:${if (isWorkProfile) 1 else 0}"
