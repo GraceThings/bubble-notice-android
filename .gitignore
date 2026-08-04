@@ -1,6 +1,7 @@
 # Gradle & Build Output
 .gradle/
 build/
+release/
 *.apk
 *.aab
 
