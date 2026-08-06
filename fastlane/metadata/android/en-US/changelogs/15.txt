@@ -1,0 +1,5 @@
+<ul>
+<li>Enhance UI with smooth animations for tab switching, screen transitions, and the About screen header.</li>
+<li>Reorganize the About screen and improve localized string resources.</li>
+<li>Fix an issue where call-related notifications with full-screen intents caused system UI glitches.</li>
+</ul>
