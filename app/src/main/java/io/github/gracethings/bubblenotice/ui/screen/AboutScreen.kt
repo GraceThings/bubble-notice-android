@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
@@ -98,6 +99,7 @@ private const val PROJECT_URL = "https://github.com/GraceThings/bubble-notice-an
 private const val ISSUES_URL = "https://github.com/GraceThings/bubble-notice-android/issues"
 private const val LICENSE_URL = "https://github.com/GraceThings/bubble-notice-android/blob/master/LICENSE.txt"
 private const val PRIVACY_URL = "https://github.com/GraceThings/bubble-notice-android/blob/master/SECURITY.md"
+private const val TRANSLATION_URL = "https://github.com/GraceThings/bubble-notice-android/issues/5"
 
 @Composable
 fun AboutScreen() {
@@ -331,6 +333,7 @@ fun AboutScreen() {
             modifier = Modifier.fillMaxWidth()
         ) {
             val topShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+            val middleShape = RoundedCornerShape(4.dp)
             val bottomShape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
 
             AboutListItem(
@@ -340,6 +343,14 @@ fun AboutScreen() {
                 showTrailingArrow = true,
                 shape = topShape,
                 onClick = { uriHandler.openUri(ISSUES_URL) }
+            )
+            AboutListItem(
+                icon = { Icon(Icons.Default.Translate, contentDescription = null) },
+                title = stringResource(R.string.about_request_translations),
+                subtitle = stringResource(R.string.about_subtitle_request_translations),
+                showTrailingArrow = true,
+                shape = middleShape,
+                onClick = { uriHandler.openUri(TRANSLATION_URL) }
             )
             AboutListItem(
                 icon = { Icon(Icons.Default.Download, contentDescription = null) },

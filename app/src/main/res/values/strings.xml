@@ -73,4 +73,7 @@
     <string name="dialog_clear_cache_cancel">Cancel</string>
     <string name="setting_experimental_collapse_title">Experimental: Collapse Bubble</string>
     <string name="setting_experimental_collapse_desc">This may cause System UI display issues</string>
+
+    <string name="about_request_translations">Request Translations</string>
+    <string name="about_subtitle_request_translations">Help translate the app to your language on GitHub</string>
 </resources>

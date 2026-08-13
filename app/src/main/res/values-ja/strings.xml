@@ -64,4 +64,7 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">セキュリティポリシーを表示</string>
     <string name="about_subtitle_export_logs">デバッグログをファイルに保存</string>
+
+    <string name="about_request_translations">翻訳をリクエスト</string>
+    <string name="about_subtitle_request_translations">GitHubのIssueで翻訳に協力してください</string>
 </resources>

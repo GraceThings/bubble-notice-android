@@ -73,4 +73,7 @@
     <string name="dialog_clear_cache_cancel">取消</string>
     <string name="setting_experimental_collapse_title">(實驗性) 跳轉後收合泡泡</string>
     <string name="setting_experimental_collapse_desc">此功能可能會引起 System UI 顯示問題</string>
+
+    <string name="about_request_translations">請求添加翻譯</string>
+    <string name="about_subtitle_request_translations">在 GitHub 提交 Issue 幫助我們翻譯應用</string>
 </resources>

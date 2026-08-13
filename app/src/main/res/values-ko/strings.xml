@@ -64,4 +64,7 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">보안 정책 보기</string>
     <string name="about_subtitle_export_logs">디버그 로그를 파일로 저장</string>
+
+    <string name="about_request_translations">번역 요청</string>
+    <string name="about_subtitle_request_translations">GitHub의 Issue에서 앱 번역을 도와주세요</string>
 </resources>
