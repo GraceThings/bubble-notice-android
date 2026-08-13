@@ -67,4 +67,6 @@
 
     <string name="about_request_translations">翻訳をリクエスト</string>
     <string name="about_subtitle_request_translations">GitHubのIssueで翻訳に協力してください</string>
+
+    <string name="selector_channels_empty">まだ通知カテゴリが見つかりません。通知を受信してから設定してください。</string>
 </resources>

@@ -67,4 +67,6 @@
 
     <string name="about_request_translations">번역 요청</string>
     <string name="about_subtitle_request_translations">GitHub의 Issue에서 앱 번역을 도와주세요</string>
+
+    <string name="selector_channels_empty">알림 채널을 찾을 수 없습니다. 새 알림을 받은 후 다시 설정해 주세요.</string>
 </resources>

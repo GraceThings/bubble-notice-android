@@ -27,9 +27,19 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
+import android.app.NotificationChannel
+import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -120,6 +130,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
 
     val alphabetList = ('A'..'Z').map { it.toString() } + listOf("#")
     val listState = rememberLazyListState()
+    val expandedApps = remember { mutableStateListOf<String>() }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Top Bar (顶部栏)
@@ -210,36 +221,135 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                 ) {
                     itemsIndexed(displayedApps) { _, app ->
                         val isSelected = selectedPackages.contains(app.id)
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .clickable {
-                                    val newSelection = selectedPackages.toMutableSet()
-                                    if (isSelected) newSelection.remove(app.id) else newSelection.add(app.id)
-                                    selectedPackages = newSelection
+                        val isExpanded = expandedApps.contains(app.id)
+                        
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Card(
+                                shape = RoundedCornerShape(if (isExpanded) 16.dp else 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        if (isExpanded) expandedApps.remove(app.id) else expandedApps.add(app.id)
+                                    }
+                            ) {
+                                ListItem(
+                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                                    leadingContent = {
+                                        Image(
+                                            bitmap = app.icon.toBitmap(100, 100).asImageBitmap(),
+                                            contentDescription = app.name,
+                                            modifier = Modifier.size(44.dp)
+                                        )
+                                    },
+                                    supportingContent = { Text(app.packageName, style = MaterialTheme.typography.labelMedium) },
+                                    trailingContent = { 
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Switch(
+                                                checked = isSelected,
+                                                onCheckedChange = { checked ->
+                                                    val newSelection = selectedPackages.toMutableSet()
+                                                    if (checked) newSelection.add(app.id) else newSelection.remove(app.id)
+                                                    selectedPackages = newSelection
+                                                    if (!isPreview) {
+                                                        AppUtils.saveSelectedApps(context, newSelection)
+                                                    }
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Icon(
+                                                if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                                contentDescription = "Expand"
+                                            )
+                                        }
+                                    }
+                                ) { Text(app.name, fontWeight = FontWeight.Bold) }
+                            }
+                            
+                            AnimatedVisibility(
+                                visible = isExpanded && isSelected,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                var disabledChannels by remember { mutableStateOf<Set<String>>(emptySet()) }
+                                
+                                // data class internally mapped to channel ID and Name
+                                var displayChannels by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+                                
+                                LaunchedEffect(app.id) {
                                     if (!isPreview) {
-                                        AppUtils.saveSelectedApps(context, newSelection)
+                                        disabledChannels = AppUtils.getDisabledChannels(context, app.id)
+                                        withContext(Dispatchers.IO) {
+                                            val userHandle = AppUtils.getUserHandle(context, app.isWorkProfile)
+                                            try {
+                                                val sysChannels = BubbleNotificationListenerService.instance?.getNotificationChannels(app.packageName, userHandle)
+                                                if (sysChannels != null) {
+                                                    displayChannels = sysChannels.map { Pair(it.id, it.name?.toString() ?: it.id) }.distinctBy { it.first }
+                                                } else {
+                                                    throw SecurityException("Null returned from getNotificationChannels")
+                                                }
+                                            } catch (e: SecurityException) {
+                                                // Fallback to known channels if we lack privileges
+                                                val knownIds = AppUtils.getKnownChannels(context, app.id)
+                                                displayChannels = knownIds.map { Pair(it, it) }.distinctBy { it.first }
+                                            }
+                                        }
                                     }
                                 }
-                        ) {
-                            ListItem(
-                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                                leadingContent = {
-                                    Image(
-                                        bitmap = app.icon.toBitmap(100, 100).asImageBitmap(),
-                                        contentDescription = app.name,
-                                        modifier = Modifier.size(44.dp)
-                                    )
-                                },
-                                supportingContent = { Text(app.packageName, style = MaterialTheme.typography.labelMedium) },
-                                trailingContent = { Switch(checked = isSelected, onCheckedChange = null) }
-                            ) { Text(app.name, fontWeight = FontWeight.Bold) }
+                                
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                                        if (displayChannels == null) {
+                                            if (!isPreview) {
+                                                Text("Loading channels...", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        } else if (displayChannels!!.isEmpty()) {
+                                            Text(stringResource(R.string.selector_channels_empty), modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                                        } else {
+                                            displayChannels!!.forEach { (channelId, channelName) ->
+                                                val isChannelEnabled = !disabledChannels.contains(channelId)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        if (isChannelEnabled) Icons.Default.Notifications else Icons.Default.NotificationsOff,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.padding(end = 8.dp).size(20.dp),
+                                                        tint = if (isChannelEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(channelName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                    }
+                                                    Switch(
+                                                        checked = isChannelEnabled,
+                                                        onCheckedChange = { enabled ->
+                                                            val newDisabled = disabledChannels.toMutableSet()
+                                                            if (enabled) newDisabled.remove(channelId) else newDisabled.add(channelId)
+                                                            disabledChannels = newDisabled
+                                                            if (!isPreview) {
+                                                                AppUtils.setChannelDisabled(context, app.id, channelId, !enabled)
+                                                            }
+                                                        },
+                                                        modifier = Modifier.scale(0.8f)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

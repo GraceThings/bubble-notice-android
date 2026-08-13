@@ -79,6 +79,40 @@ object AppUtils {
         prefs.edit().putStringSet(KEY_SELECTED_APPS, packages).apply()
     }
 
+    // 记录已知的通知渠道（作为无权直接查询时的回退方案） / Record known notification channels
+    fun addKnownChannel(context: Context, pkgId: String, channelId: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = "known_channels_$pkgId"
+        val currentSet = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+        if (currentSet.add(channelId)) {
+            prefs.edit().putStringSet(key, currentSet).apply()
+        }
+    }
+
+    fun getKnownChannels(context: Context, pkgId: String): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet("known_channels_$pkgId", emptySet()) ?: emptySet()
+    }
+
+    // 获取特定应用被禁用的通知渠道 / Get disabled notification channels for a specific app
+    fun getDisabledChannels(context: Context, pkgId: String): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet("disabled_channels_$pkgId", emptySet()) ?: emptySet()
+    }
+
+    // 设置特定应用的某个通知渠道是否禁用 / Set whether a specific notification channel is disabled for an app
+    fun setChannelDisabled(context: Context, pkgId: String, channelId: String, disabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = "disabled_channels_$pkgId"
+        val currentSet = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+        if (disabled) {
+            currentSet.add(channelId)
+        } else {
+            currentSet.remove(channelId)
+        }
+        prefs.edit().putStringSet(key, currentSet).apply()
+    }
+
     // 异步加载桌面可启动应?/ Asynchronously load launcher apps.
     suspend fun loadInstalledApps(context: Context): List<AppItem> = withContext(Dispatchers.IO) {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
@@ -101,6 +135,15 @@ object AppUtils {
             }
         }
         apps.distinctBy { it.packageName + "_" + it.isWorkProfile }.sortedBy { it.name }
+    }
+
+    // 提取 UserHandle 辅助方法 / Extract UserHandle helper
+    fun getUserHandle(context: Context, isWork: Boolean): android.os.UserHandle {
+        val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
+        return userManager.userProfiles.firstOrNull { profile ->
+            val profileIsWork = profile != android.os.Process.myUserHandle()
+            profileIsWork == isWork
+        } ?: android.os.Process.myUserHandle()
     }
 
     // 按包名获取应用名?/ Get app name by package name.

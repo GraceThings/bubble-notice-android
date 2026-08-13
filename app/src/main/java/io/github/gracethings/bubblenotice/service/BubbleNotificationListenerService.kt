@@ -47,6 +47,9 @@ import kotlinx.coroutines.cancel
 class BubbleNotificationListenerService : NotificationListenerService() {
 
     companion object {
+        var instance: BubbleNotificationListenerService? = null
+            private set
+
         private const val MAIN_BUBBLE_NOTIFICATION_ID = 1001
 
         data class PackageState(
@@ -92,6 +95,16 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        instance = this
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        instance = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
@@ -128,6 +141,17 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         val selectedApps = AppUtils.getSelectedApps(this)
         if (selectedApps.contains(pkgId)) {
+            val channelId = notification.channelId
+            if (channelId != null) {
+                AppUtils.addKnownChannel(this, pkgId, channelId)
+            }
+            
+            val disabledChannels = AppUtils.getDisabledChannels(this, pkgId)
+            if (channelId != null && disabledChannels.contains(channelId)) {
+                AppLogger.d("BubbleService", "Skipped notification from: $pkgId (disabled channel: $channelId)")
+                return
+            }
+
             AppLogger.d("BubbleService", "Intercepted notification from: $pkg")
             serviceScope.launch {
 

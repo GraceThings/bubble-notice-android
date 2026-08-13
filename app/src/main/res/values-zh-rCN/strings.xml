@@ -76,5 +76,7 @@
 
     <string name="about_request_translations">请求添加翻译</string>
     <string name="about_subtitle_request_translations">在 GitHub 提交 Issue 帮助我们翻译应用</string>
+
+    <string name="selector_channels_empty">暂未发现通知类别，请在收到该应用的新通知后再来配置。</string>
 </resources>
 

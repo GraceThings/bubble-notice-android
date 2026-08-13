@@ -76,4 +76,6 @@
 
     <string name="about_request_translations">Request Translations</string>
     <string name="about_subtitle_request_translations">Help translate the app to your language on GitHub</string>
+
+    <string name="selector_channels_empty">No channels found yet. Wait for a notification to arrive to configure its category.</string>
 </resources>
