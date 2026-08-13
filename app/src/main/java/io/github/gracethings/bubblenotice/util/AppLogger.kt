@@ -9,16 +9,44 @@ import java.util.Date
 import java.util.Locale
 
 object AppLogger {
-    private var logFile: File? = null
-    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 5MB limit (5MB 限制)
+    private var logDir: File? = null
+    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 5MB limit
+    private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 7 days in milliseconds
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+    private val fileDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     fun init(context: Context) {
-        val file = File(context.cacheDir, "app_logs.txt")
+        logDir = context.cacheDir
+        cleanOldLogs()
+    }
+
+    private fun cleanOldLogs() {
+        val dir = logDir ?: return
+        val threshold = System.currentTimeMillis() - MAX_AGE_MS
+        
+        // Clean legacy file if exists
+        val legacyFile = File(dir, "app_logs.txt")
+        if (legacyFile.exists()) {
+            legacyFile.delete()
+        }
+
+        // Clean old daily files
+        val files = dir.listFiles { _, name -> name.startsWith("app_logs_") && name.endsWith(".txt") }
+        files?.forEach { file ->
+            if (file.lastModified() < threshold) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun getCurrentLogFile(): File? {
+        val dir = logDir ?: return null
+        val dateString = fileDateFormat.format(Date())
+        val file = File(dir, "app_logs_$dateString.txt")
         if (file.exists() && file.length() > MAX_LOG_SIZE) {
             file.delete()
         }
-        logFile = file
+        return file
     }
 
     fun d(tag: String, msg: String) {
@@ -42,10 +70,14 @@ object AppLogger {
         writeToFile("E", tag, "$msg\n$stackTrace")
     }
 
-    fun getLogFile(): File? = logFile
+    fun getLogFiles(): List<File> {
+        val dir = logDir ?: return emptyList()
+        return dir.listFiles { _, name -> name.startsWith("app_logs_") && name.endsWith(".txt") }
+            ?.sortedBy { it.name } ?: emptyList()
+    }
 
     private fun writeToFile(level: String, tag: String, msg: String) {
-        val file = logFile ?: return
+        val file = getCurrentLogFile() ?: return
         try {
             val timestamp = dateFormat.format(Date())
             val logLine = "$timestamp $level/$tag: $msg\n"

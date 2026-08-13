@@ -123,20 +123,22 @@ fun AboutScreen() {
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
         if (uri != null) {
-            val logFile = AppLogger.getLogFile()
-            if (logFile != null && logFile.exists()) {
+            val logFiles = AppLogger.getLogFiles()
+            if (logFiles.isNotEmpty()) {
                 try {
                     context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                        FileInputStream(logFile).use { inputStream ->
-                            inputStream.copyTo(outputStream)
+                        logFiles.forEach { logFile ->
+                            java.io.FileInputStream(logFile).use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
                         }
                     }
-                    Toast.makeText(context, R.string.toast_logs_exported, Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, R.string.toast_logs_exported, android.widget.Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
                     AppLogger.e("AboutScreen", "Failed to export logs", e)
                 }
             } else {
-                Toast.makeText(context, R.string.toast_logs_empty, Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, R.string.toast_logs_empty, android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }
