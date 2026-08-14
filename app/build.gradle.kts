@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.gracethings.bubblenotice"
         minSdk = 30
         targetSdk = 37
-        versionCode = 15
-        versionName = "1.0.4"
+        versionCode = 16
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
