@@ -1,0 +1,6 @@
+<ul>
+<li>Add notification channel filtering and management in the app selection screen, letting you toggle categories per app.</li>
+<li>Add a "Request Translations" option to the About screen.</li>
+<li>Enable edge-to-edge display for a more immersive layout.</li>
+<li>Implement daily log rotation and automated cleanup.</li>
+</ul>
