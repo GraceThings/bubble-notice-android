@@ -32,7 +32,7 @@ import android.os.Process
 import androidx.core.graphics.drawable.toBitmap
 import io.github.gracethings.bubblenotice.BubbleActivity
 import io.github.gracethings.bubblenotice.MainActivity
-import io.github.gracethings.bubblenotice.ShortcutActivity
+import io.github.gracethings.bubblenotice.receiver.NotificationActionReceiver
 
 import io.github.gracethings.bubblenotice.R
 import io.github.gracethings.bubblenotice.util.AppUtils
@@ -51,6 +51,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             private set
 
         private const val MAIN_BUBBLE_NOTIFICATION_ID = 1001
+        private const val PER_APP_BUBBLE_NOTIFICATION_ID_BASE = 20000
+        private const val PER_APP_BUBBLE_NOTIFICATION_ID_RANGE = 8000
+        // Android does not expose the exact bubble stack limit. Most Android builds allow
+        // around five bubble slots, so this is a conservative best-effort budget.
+        private const val TOTAL_BUBBLE_BUDGET = 5
+        private const val RESERVED_BUBBLE_SLOTS_FOR_OTHER_APPS = 1
+        private const val MIN_PER_APP_BUBBLES = 0
 
         data class PackageState(
             val title: String,
@@ -62,6 +69,14 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         private val packageStateMap = mutableMapOf<String, PackageState>()
         private var isBubbleDismissed = false
+        private val dismissedPackages = mutableSetOf<String>()
+        private val activePerAppBubbles = linkedMapOf<String, Long>()
+        private val perAppNotificationIds = mutableMapOf<String, Int>()
+        private val notificationIdToPackage = mutableMapOf<Int, String>()
+        private val perAppShortcutIds = mutableMapOf<String, String>()
+        private val perAppBubbleData = mutableMapOf<String, BubbleState>()
+        private val perAppStateLock = Any()
+        private val programmaticCancellationIds = mutableSetOf<Int>()
 
         // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡
         // Store last bubble notification data for suppressing shade while keeping bubble
@@ -69,26 +84,104 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         private var lastBubbleIcon: IconCompat? = null
         private var lastBuilder: NotificationCompat.Builder? = null
 
+        data class BubbleState(
+            val intent: PendingIntent,
+            val icon: IconCompat,
+            val builder: NotificationCompat.Builder
+        )
+
         /**
          * 仅隐藏通知栏中的通知，保留气泡
          * Suppress the notification from the shade while keeping the bubble alive.
          */
-        fun suppressNotificationInShade(context: android.content.Context) {
+        fun suppressNotificationInShade(context: android.content.Context, packageId: String? = null) {
+            if (packageId != null && AppUtils.isPerAppBubblesEnabled(context)) {
+                val snapshot = synchronized(perAppStateLock) {
+                    val notificationId = perAppNotificationIds[packageId] ?: return@synchronized null
+                    val state = perAppBubbleData[packageId] ?: return@synchronized null
+                    notificationId to state
+                } ?: return
+                val (notificationId, state) = snapshot
+                val suppressed = buildSuppressedBubbleMetadata(state.intent, state.icon)
+                state.builder.setBubbleMetadata(suppressed)
+                try {
+                    NotificationManagerCompat.from(context).notify(notificationId, state.builder.build())
+                } catch (e: SecurityException) {
+                    e.printStackTrace()
+                }
+                return
+            }
+
             val builder = lastBuilder ?: return
             val intent = lastBubbleIntent ?: return
             val icon = lastBubbleIcon ?: return
 
-            val suppressed = NotificationCompat.BubbleMetadata.Builder(intent, icon)
-                .setDesiredHeight(600)
-                .setAutoExpandBubble(false)
-                .setSuppressNotification(true)
-                .build()
-
+            val suppressed = buildSuppressedBubbleMetadata(intent, icon)
             builder.setBubbleMetadata(suppressed)
             try {
                 NotificationManagerCompat.from(context).notify(MAIN_BUBBLE_NOTIFICATION_ID, builder.build())
             } catch (e: SecurityException) {
                 e.printStackTrace()
+            }
+        }
+
+        private fun buildSuppressedBubbleMetadata(
+            intent: PendingIntent,
+            icon: IconCompat
+        ): NotificationCompat.BubbleMetadata {
+            return NotificationCompat.BubbleMetadata.Builder(intent, icon)
+                .setDesiredHeight(600)
+                .setAutoExpandBubble(false)
+                .setSuppressNotification(true)
+                .build()
+        }
+
+        private fun cancelOwnNotification(context: android.content.Context, notificationId: Int) {
+            synchronized(perAppStateLock) {
+                programmaticCancellationIds.add(notificationId)
+            }
+            try {
+                NotificationManagerCompat.from(context).cancel(notificationId)
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
+
+        fun cancelAllPerAppBubbles(context: android.content.Context) {
+            synchronized(perAppStateLock) {
+                val pkgIds = activePerAppBubbles.keys.toList()
+                for (pkgId in pkgIds) {
+                    val notificationId = perAppNotificationIds.remove(pkgId)
+                    val shortcutId = perAppShortcutIds.remove(pkgId)
+                    activePerAppBubbles.remove(pkgId)
+                    perAppBubbleData.remove(pkgId)
+                    dismissedPackages.remove(pkgId)
+                    if (notificationId != null) {
+                        notificationIdToPackage.remove(notificationId)
+                        cancelOwnNotification(context, notificationId)
+                    }
+                    if (shortcutId != null) {
+                        try {
+                            ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(shortcutId))
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
+        }
+
+        fun cancelMainBubble(context: android.content.Context) {
+            val shouldCancel = synchronized(perAppStateLock) {
+                val shouldCancel = lastBuilder != null && !isBubbleDismissed
+                lastBubbleIntent = null
+                lastBubbleIcon = null
+                lastBuilder = null
+                isBubbleDismissed = false
+                shouldCancel
+            }
+            if (shouldCancel) {
+                cancelOwnNotification(context, MAIN_BUBBLE_NOTIFICATION_ID)
             }
         }
     }
@@ -140,6 +233,16 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val pkgId = "${pkg}:${if (isWorkProfile) 1 else 0}"
 
         val selectedApps = AppUtils.getSelectedApps(this)
+        if (!selectedApps.contains(pkgId) &&
+            AppUtils.isPerAppBubblesEnabled(this) &&
+            notification.getBubbleMetadata() != null
+        ) {
+            serviceScope.launch {
+                reconcilePerAppBubbleCapacity()
+            }
+            return
+        }
+
         if (selectedApps.contains(pkgId)) {
             val channelId = notification.channelId
             if (channelId != null) {
@@ -197,8 +300,15 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     }
                 }
 
+                val isPerAppBubbles = AppUtils.isPerAppBubblesEnabled(this@BubbleNotificationListenerService)
+                val wasDismissed = if (isPerAppBubbles) {
+                    dismissedPackages.contains(pkgId)
+                } else {
+                    isBubbleDismissed
+                }
+
                 // 如果用户已经手动移除了当前气泡，且没有新消息，则不重新显示气泡 / If user dismissed the bubble and no new message, do not show again.
-                if (isBubbleDismissed && !isNewMessage) {
+                if (wasDismissed && !isNewMessage) {
                     AppLogger.d("BubbleService", "Ignored notification from $pkg: Bubble was dismissed and no new message.")
                     return@launch
                 }
@@ -209,6 +319,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     AppLogger.i("BubbleService", "New message detected from $pkg")
                     packageStateMap[pkgId] = PackageState(title, text, msgTime, styleTime, messageCount)
                     isBubbleDismissed = false
+                    dismissedPackages.remove(pkgId)
                     UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
@@ -223,7 +334,28 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
-                updateMainBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
+                if (isPerAppBubbles) {
+                    var shouldUpdateBubble = false
+                    synchronized(perAppStateLock) {
+                        val wasActive = activePerAppBubbles.containsKey(pkgId)
+                        val maxAllowed = maxPerAppBubbles()
+                        if (isNewMessage && !wasActive) {
+                            ensurePerAppBubbleCapacity(maxAllowed)
+                            shouldUpdateBubble = maxAllowed > 0
+                        } else if (wasActive) {
+                            shouldUpdateBubble = maxAllowed > 0
+                            if (!shouldUpdateBubble) {
+                                dismissPerAppBubble(pkgId)
+                            }
+                        }
+                        if (shouldUpdateBubble) {
+                            updatePerAppBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
+                            markActivePerAppBubble(pkgId)
+                        }
+                    }
+                } else {
+                    updateMainBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
+                }
             }
         }
     }
@@ -235,7 +367,15 @@ class BubbleNotificationListenerService : NotificationListenerService() {
     ) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
 
-        if (sbn.packageName != packageName || sbn.id != MAIN_BUBBLE_NOTIFICATION_ID) {
+        if (sbn.packageName != packageName) {
+            return
+        }
+
+        val ignoredProgrammaticCancellation = synchronized(perAppStateLock) {
+            programmaticCancellationIds.remove(sbn.id)
+        }
+        if (ignoredProgrammaticCancellation) {
+            AppLogger.d("BubbleService", "Ignored programmatic cancellation for notification ${sbn.id}")
             return
         }
 
@@ -243,9 +383,33 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 reason == REASON_CANCEL_ALL ||
                 reason == REASON_USER_STOPPED
 
-        if (isUserDismissal) {
+        if (sbn.id == MAIN_BUBBLE_NOTIFICATION_ID && isUserDismissal) {
             isBubbleDismissed = true
+            lastBubbleIntent = null
+            lastBubbleIcon = null
+            lastBuilder = null
             AppLogger.d("BubbleService", "Main bubble was dismissed by user")
+            return
+        }
+
+        synchronized(perAppStateLock) {
+            val pkgId = notificationIdToPackage[sbn.id]
+            if (pkgId != null && isUserDismissal) {
+                dismissedPackages.add(pkgId)
+                activePerAppBubbles.remove(pkgId)
+                perAppBubbleData.remove(pkgId)
+                notificationIdToPackage.remove(sbn.id)
+                perAppNotificationIds.remove(pkgId)
+                val shortcutId = perAppShortcutIds.remove(pkgId)
+                if (shortcutId != null) {
+                    try {
+                        ShortcutManagerCompat.removeDynamicShortcuts(this, listOf(shortcutId))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                AppLogger.d("BubbleService", "Per-app bubble was dismissed by user: $pkgId")
+            }
         }
     }
 
@@ -301,10 +465,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         originalIntent: PendingIntent?,
         originalSmallIcon: android.graphics.drawable.Icon?,
         originalLargeIcon: android.graphics.drawable.Icon? = null,
-        actions: List<android.app.Notification.Action> = emptyList()
+        actions: List<android.app.Notification.Action> = emptyList(),
+        notificationId: Int = MAIN_BUBBLE_NOTIFICATION_ID,
+        shortcutId: String = "bubble_notice_shortcut",
+        filterByPackage: Boolean = false,
+        storeAsPerApp: Boolean = false
     ) {
         val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
-        val shortcutId = "bubble_notice_shortcut"
 
         val icon = if (originalLargeIcon != null) {
             try {
@@ -336,13 +503,15 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         // 气泡点击意图 / Bubble action intent: open BubbleActivity as the bubble-notice console.
         val targetIntent = Intent(this, BubbleActivity::class.java).apply {
             setPackage(packageName)
-            putExtra("EXTRA_PACKAGE_NAME", pkgId)
+            if (filterByPackage) {
+                putExtra("EXTRA_PACKAGE_NAME", pkgId)
+            }
             putExtra("EXTRA_TITLE", title)
             putExtra("EXTRA_TEXT", text)
             putExtra("EXTRA_TIME", msgTime)
         }
         val bubbleIntent = PendingIntent.getActivity(
-            this, 0, targetIntent,
+            this, if (filterByPackage) pkgId.hashCode() else 0, targetIntent,
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -369,19 +538,17 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val style = NotificationCompat.MessagingStyle(chatPartner)
             .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
 
-        // "打开应用" 快捷操作意图 / "Open App" action intent: uses ShortcutActivity (separate task stack)
-        // 使用独立的 ShortcutActivity 而非 BubbleActivity，避免污染气泡的任务栈
-        val openAppIntent = Intent(this, ShortcutActivity::class.java).apply {
+        // "打开应用" 快捷操作意图 / "Open App" action intent: handled without a transparent Activity.
+        val openAppIntent = Intent(this, NotificationActionReceiver::class.java).apply {
             action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
             putExtra("EXTRA_PACKAGE_NAME", pkgId)
             putExtra("EXTRA_SENDER_NAME", title)
             if (originalIntent != null) {
                 putExtra("EXTRA_ORIGINAL_INTENT", originalIntent)
             }
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-        val openAppPendingIntent = PendingIntent.getActivity(
+        val openAppPendingIntent = PendingIntent.getBroadcast(
             this, pkgId.hashCode(), openAppIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -401,7 +568,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         // 通知体点击意图 / Notification body tap: open bubble normally (same as tapping the bubble icon)
         // 不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈
         val contentIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, BubbleActivity::class.java).apply { setPackage(packageName) },
+            this, if (filterByPackage) pkgId.hashCode() else 0,
+            Intent(this, BubbleActivity::class.java).apply {
+                setPackage(packageName)
+                if (filterByPackage) {
+                    putExtra("EXTRA_PACKAGE_NAME", pkgId)
+                }
+            },
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -444,25 +617,153 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             builder.setSmallIcon(R.drawable.ic_notification)
         }
 
-        if (!isUpdate) {
+        val hasExistingNotification = if (storeAsPerApp) {
+            activePerAppBubbles.containsKey(pkgId)
+        } else {
+            lastBuilder != null
+        }
+        if (!isUpdate && hasExistingNotification) {
             // 如果未开启免打扰，且是新消息，则先取消旧通知以强制触发横幅弹�?/ Force heads-up by canceling the old notification
-            try {
-                NotificationManagerCompat.from(this).cancel(MAIN_BUBBLE_NOTIFICATION_ID)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            cancelOwnNotification(this, notificationId)
         }
 
         // 保存气泡数据，以便后续调用 suppressNotificationInShade
         // Save bubble data for later suppression
-        lastBubbleIntent = bubbleIntent
-        lastBubbleIcon = icon
-        lastBuilder = builder
+        if (storeAsPerApp) {
+            perAppBubbleData[pkgId] = BubbleState(bubbleIntent, icon, builder)
+        } else {
+            lastBubbleIntent = bubbleIntent
+            lastBubbleIcon = icon
+            lastBuilder = builder
+        }
 
         try {
-            NotificationManagerCompat.from(this).notify(MAIN_BUBBLE_NOTIFICATION_ID, builder.build())
+            NotificationManagerCompat.from(this).notify(notificationId, builder.build())
         } catch (e: SecurityException) {
             e.printStackTrace()
+        }
+    }
+
+    private fun updatePerAppBubble(
+        pkg: String,
+        pkgId: String,
+        appName: String,
+        title: String,
+        text: String,
+        msgTime: Long,
+        isUpdate: Boolean,
+        isTakeOver: Boolean,
+        originalIntent: PendingIntent?,
+        originalSmallIcon: android.graphics.drawable.Icon?,
+        originalLargeIcon: android.graphics.drawable.Icon? = null,
+        actions: List<android.app.Notification.Action> = emptyList()
+    ) {
+        val notificationId = notificationIdForPackage(pkgId)
+        val shortcutId = shortcutIdForPackage(pkgId)
+
+        updateMainBubble(
+            pkg = pkg,
+            pkgId = pkgId,
+            appName = appName,
+            title = title,
+            text = text,
+            msgTime = msgTime,
+            isUpdate = isUpdate,
+            isTakeOver = isTakeOver,
+            originalIntent = originalIntent,
+            originalSmallIcon = originalSmallIcon,
+            originalLargeIcon = originalLargeIcon,
+            actions = actions,
+            notificationId = notificationId,
+            shortcutId = shortcutId,
+            filterByPackage = true,
+            storeAsPerApp = true
+        )
+    }
+
+    private fun notificationIdForPackage(pkgId: String): Int {
+        perAppNotificationIds[pkgId]?.let { return it }
+
+        var candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE +
+                (pkgId.hashCode() and Int.MAX_VALUE) % PER_APP_BUBBLE_NOTIFICATION_ID_RANGE
+        while (notificationIdToPackage.containsKey(candidate)) {
+            candidate += 1
+            if (candidate >= PER_APP_BUBBLE_NOTIFICATION_ID_BASE + PER_APP_BUBBLE_NOTIFICATION_ID_RANGE) {
+                candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE
+            }
+        }
+
+        perAppNotificationIds[pkgId] = candidate
+        notificationIdToPackage[candidate] = pkgId
+        return candidate
+    }
+
+    private fun shortcutIdForPackage(pkgId: String): String {
+        perAppShortcutIds[pkgId]?.let { return it }
+
+        val sanitized = pkgId.map { char ->
+            if (char.isLetterOrDigit() || char == '_') char else '_'
+        }.joinToString("")
+        val shortcutId = "bubble_notice_$sanitized"
+        perAppShortcutIds[pkgId] = shortcutId
+        return shortcutId
+    }
+
+    private fun markActivePerAppBubble(pkgId: String) {
+        activePerAppBubbles.remove(pkgId)
+        activePerAppBubbles[pkgId] = System.currentTimeMillis()
+    }
+
+    private fun ensurePerAppBubbleCapacity(maxAllowed: Int) {
+        while (activePerAppBubbles.isNotEmpty() && activePerAppBubbles.size >= maxAllowed) {
+            val evictedPkgId = activePerAppBubbles.keys.firstOrNull { pkgId ->
+                !UnreadMessageManager.hasMessagesForPackage(pkgId)
+            } ?: activePerAppBubbles.keys.first()
+            dismissPerAppBubble(evictedPkgId)
+        }
+    }
+
+    private fun reconcilePerAppBubbleCapacity() {
+        synchronized(perAppStateLock) {
+            val maxAllowed = maxPerAppBubbles()
+            while (activePerAppBubbles.size > maxAllowed) {
+                val evictedPkgId = activePerAppBubbles.keys.firstOrNull { pkgId ->
+                    !UnreadMessageManager.hasMessagesForPackage(pkgId)
+                } ?: activePerAppBubbles.keys.first()
+                dismissPerAppBubble(evictedPkgId)
+            }
+        }
+    }
+
+    private fun maxPerAppBubbles(): Int {
+        val otherBubbleCount = try {
+            activeNotifications.count { sbn ->
+                sbn.packageName != packageName && sbn.notification.getBubbleMetadata() != null
+            }
+        } catch (e: Exception) {
+            0
+        }
+        return (TOTAL_BUBBLE_BUDGET - otherBubbleCount - RESERVED_BUBBLE_SLOTS_FOR_OTHER_APPS)
+            .coerceAtLeast(MIN_PER_APP_BUBBLES)
+    }
+
+    private fun dismissPerAppBubble(pkgId: String) {
+        val notificationId = perAppNotificationIds.remove(pkgId)
+        val shortcutId = perAppShortcutIds.remove(pkgId)
+
+        activePerAppBubbles.remove(pkgId)
+        perAppBubbleData.remove(pkgId)
+        if (notificationId != null) {
+            notificationIdToPackage.remove(notificationId)
+            cancelOwnNotification(this, notificationId)
+        }
+
+        if (shortcutId != null) {
+            try {
+                ShortcutManagerCompat.removeDynamicShortcuts(this, listOf(shortcutId))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

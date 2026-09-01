@@ -33,14 +33,6 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
-
-        <activity
-            android:name=".ShortcutActivity"
-            android:exported="true"
-            android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-            
         <receiver
             android:name=".receiver.NotificationActionReceiver"
             android:exported="false" />
@@ -50,6 +42,7 @@
             android:exported="true"
             android:allowEmbedded="true"
             android:documentLaunchMode="always"
+            android:theme="@style/Theme.BubbleNotice.BubbleActivity"
             android:resizeableActivity="true"/>
 
 

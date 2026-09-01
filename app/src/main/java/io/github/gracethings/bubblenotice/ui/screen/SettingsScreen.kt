@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.gracethings.bubblenotice.R
 import io.github.gracethings.bubblenotice.util.AppUtils
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
+import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
 
 @Composable
 fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> Unit) {
@@ -62,6 +63,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
     var hasListenerPermission by remember { mutableStateOf(false) }
     var isTakeOver by remember { mutableStateOf(AppUtils.isTakeOverNotifications(context)) }
     var isAutoJump by remember { mutableStateOf(AppUtils.isAutoJumpEnabled(context)) }
+    var isPerAppBubbles by remember { mutableStateOf(AppUtils.isPerAppBubblesEnabled(context)) }
     var isExperimentalCollapse by remember { mutableStateOf(AppUtils.isExperimentalCollapseEnabled(context)) }
     var showGuideDialog by remember { mutableStateOf(false) }
 
@@ -77,6 +79,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     hasListenerPermission = enabledListeners.contains(context.packageName)
                     isTakeOver = AppUtils.isTakeOverNotifications(context)
                     isAutoJump = AppUtils.isAutoJumpEnabled(context)
+                    isPerAppBubbles = AppUtils.isPerAppBubblesEnabled(context)
                     
                     val prefs = context.getSharedPreferences("bubble_prefs", android.content.Context.MODE_PRIVATE)
                     val guideShown = prefs.getBoolean("permission_guide_shown", false)
@@ -177,6 +180,22 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                 onCheckedChange = {
                     isAutoJump = it
                     AppUtils.setAutoJumpEnabled(context, it)
+                }
+            )
+
+            SettingSwitchCard(
+                title = stringResource(R.string.setting_per_app_bubbles_title),
+                subtitle = stringResource(R.string.setting_per_app_bubbles_desc),
+                checked = isPerAppBubbles,
+                shape = middleShape,
+                onCheckedChange = {
+                    isPerAppBubbles = it
+                    AppUtils.setPerAppBubblesEnabled(context, it)
+                    if (it) {
+                        BubbleNotificationListenerService.cancelMainBubble(context)
+                    } else {
+                        BubbleNotificationListenerService.cancelAllPerAppBubbles(context)
+                    }
                 }
             )
 

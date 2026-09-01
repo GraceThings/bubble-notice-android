@@ -131,6 +131,8 @@ enum class RevealValue { Default, Revealed }
 
 class BubbleActivity : ComponentActivity() {
 
+    private val packageFilter = MutableStateFlow<String?>(null)
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,10 +158,10 @@ class BubbleActivity : ComponentActivity() {
                     DisposableEffect(lifecycleOwner) {
                         val observer = LifecycleEventObserver { _, event ->
                             if (event == Lifecycle.Event.ON_RESUME) {
-                                io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.suppressNotificationInShade(this@BubbleActivity)
+                                io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.suppressNotificationInShade(this@BubbleActivity, packageFilter.value)
                                 selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
                                 
-                                val pendingData = AppUtils.consumePendingAutoJump()
+                                val pendingData = AppUtils.consumePendingAutoJump(packageFilter.value)
                                 if (pendingData != null) {
                                     val pendingIntent = pendingData.first
                                     val targetPkgId = pendingData.second
@@ -291,6 +293,7 @@ class BubbleActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
+        packageFilter.value = intent.getStringExtra("EXTRA_PACKAGE_NAME")
         AppLogger.d("BubbleActivity", "handleIntent called with action: ${intent.action}")
     }
 
@@ -299,9 +302,13 @@ class BubbleActivity : ComponentActivity() {
     private fun UnreadMessagesDashboard(isLandscape: Boolean) {
         val context = LocalContext.current
         val messages by UnreadMessageManager.messagesFlow.collectAsState()
+        val filter by packageFilter.collectAsState()
+        val visibleMessages = remember(messages, filter) {
+            if (filter == null) messages else messages.filter { it.packageName == filter }
+        }
 
-        val grouped = remember(messages) {
-            messages.groupBy { it.packageName to it.senderName }
+        val grouped = remember(visibleMessages) {
+            visibleMessages.groupBy { it.packageName to it.senderName }
                 .map { (key, msgList) ->
                     val sortedMsgs = msgList.sortedByDescending { it.timestamp }
                     val latestTimestamp = sortedMsgs.firstOrNull()?.timestamp ?: 0L

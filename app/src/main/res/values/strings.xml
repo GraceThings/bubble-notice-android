@@ -10,6 +10,8 @@
     <string name="setting_bubble_desc">Keep a persistent notification to show the bubble anytime.</string>
     <string name="setting_auto_jump_title">Auto Jump</string>
     <string name="setting_auto_jump_desc">Tap a notification to open the app directly without showing the bubble panel.</string>
+    <string name="setting_per_app_bubbles_title">Separate App Bubbles</string>
+    <string name="setting_per_app_bubbles_desc">Show an independent bubble for each subscribed app.</string>
     <string name="setting_apps_title">Subscribed Apps</string>
     <string name="setting_apps_count">%1$d app(s) selected</string>
     <string name="setting_apps_empty">No apps selected. Tap to add.</string>

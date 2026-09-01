@@ -3,6 +3,8 @@ package io.github.gracethings.bubblenotice.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import io.github.gracethings.bubblenotice.MainActivity
+import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
 import io.github.gracethings.bubblenotice.util.AppLogger
 import io.github.gracethings.bubblenotice.util.AppUtils
 import io.github.gracethings.bubblenotice.util.UnreadMessageManager
@@ -12,6 +14,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         AppLogger.d("NotificationActionReceiver", "Received intent: ")
         if (intent.action == "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP") {
             val pkg = intent.getStringExtra("EXTRA_PACKAGE_NAME")
+            val senderName = intent.getStringExtra("EXTRA_SENDER_NAME")
             val originalIntent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra("EXTRA_ORIGINAL_INTENT", android.app.PendingIntent::class.java)
             } else {
@@ -19,8 +22,11 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 intent.getParcelableExtra("EXTRA_ORIGINAL_INTENT") as? android.app.PendingIntent
             }
             if (pkg != null) {
-                AppLogger.d("NotificationActionReceiver", "Clearing messages for pkg: ")
-                UnreadMessageManager.clearMessagesForPackage(pkg)
+                if (senderName != null) {
+                    UnreadMessageManager.clearMessagesForSender(pkg, senderName)
+                } else {
+                    UnreadMessageManager.clearMessagesForPackage(pkg)
+                }
                 if (originalIntent != null) {
                     AppLogger.d("NotificationActionReceiver", "Sending original intent")
                     AppUtils.sendPendingIntentAllowed(context, originalIntent)
@@ -28,6 +34,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     AppLogger.d("NotificationActionReceiver", "Launching app directly")
                     AppUtils.launchApp(context, pkg)
                 }
+                BubbleNotificationListenerService.suppressNotificationInShade(context, pkg)
+            } else {
+                MainActivity.sendBubbleNotification(context)
             }
         }
     }

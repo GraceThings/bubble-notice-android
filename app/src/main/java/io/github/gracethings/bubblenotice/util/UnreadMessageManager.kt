@@ -73,6 +73,12 @@ object UnreadMessageManager {
         }
     }
 
+    fun hasMessagesForPackage(packageName: String): Boolean {
+        synchronized(messagesList) {
+            return messagesList.any { it.packageName == packageName }
+        }
+    }
+
     fun clearMessagesForSender(packageName: String, senderName: String) {
         synchronized(messagesList) {
             messagesList.removeAll { it.packageName == packageName && it.senderName == senderName }

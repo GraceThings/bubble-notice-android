@@ -37,11 +37,19 @@ object AppUtils {
     private const val KEY_AUTO_JUMP = "auto_jump_enabled"
     private const val KEY_BUBBLE_DND = "bubble_dnd_enabled"
     private const val KEY_EXPERIMENTAL_COLLAPSE = "experimental_collapse_enabled"
+    private const val KEY_PER_APP_BUBBLES = "per_app_bubbles_enabled"
 
     // 临时拉起目标状?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
     private var pendingAutoJumpTimestamp: Long = 0L
     private var pendingAutoJumpPkgId: String? = null
+    private data class PendingAutoJump(
+        val intent: android.app.PendingIntent,
+        val pkgId: String,
+        val senderName: String?,
+        val timestamp: Long
+    )
+    private val pendingAutoJumpByPkg = mutableMapOf<String, PendingAutoJump>()
 
     fun hasShownPinTutorial(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -231,18 +239,46 @@ object AppUtils {
     // 自动跳转待处理数据 / Pending auto-jump data
     private var pendingAutoJumpSenderName: String? = null
 
+    @Synchronized
     fun setPendingAutoJump(intent: android.app.PendingIntent?, pkgId: String?, senderName: String? = null) {
         pendingAutoJumpIntent = intent
         pendingAutoJumpPkgId = pkgId
         pendingAutoJumpSenderName = senderName
         pendingAutoJumpTimestamp = if (intent != null) System.currentTimeMillis() else 0L
+        if (pkgId == null) {
+            return
+        }
+        if (intent == null) {
+            pendingAutoJumpByPkg.remove(pkgId)
+        } else {
+            pendingAutoJumpByPkg[pkgId] = PendingAutoJump(
+                intent = intent,
+                pkgId = pkgId,
+                senderName = senderName,
+                timestamp = pendingAutoJumpTimestamp
+            )
+        }
     }
 
     /**
      * 返回 Triple(PendingIntent, pkgId, senderName)
      * Returns Triple(PendingIntent, pkgId, senderName)
      */
-    fun consumePendingAutoJump(): Triple<android.app.PendingIntent, String?, String?>? {
+    @Synchronized
+    fun consumePendingAutoJump(requestedPkgId: String? = null): Triple<android.app.PendingIntent, String?, String?>? {
+        if (requestedPkgId != null) {
+            val entry = pendingAutoJumpByPkg.remove(requestedPkgId)
+            pendingAutoJumpIntent = null
+            pendingAutoJumpTimestamp = 0L
+            pendingAutoJumpPkgId = null
+            pendingAutoJumpSenderName = null
+
+            if (entry != null && System.currentTimeMillis() - entry.timestamp <= 6000L) {
+                return Triple(entry.intent, entry.pkgId, entry.senderName)
+            }
+            return null
+        }
+
         val target = pendingAutoJumpIntent
         val timestamp = pendingAutoJumpTimestamp
         val pkgId = pendingAutoJumpPkgId
@@ -251,7 +287,8 @@ object AppUtils {
         pendingAutoJumpTimestamp = 0L
         pendingAutoJumpPkgId = null
         pendingAutoJumpSenderName = null
-        
+        pendingAutoJumpByPkg.clear()
+
         // 6000ms 阈值：只在气泡刚刚弹出（flyout 显示阶段）点击时触发自动跳转。
         // 结束后点击气泡本身，将只展开气泡不自动跳转。
         if (target != null && System.currentTimeMillis() - timestamp <= 6000L) {
@@ -325,6 +362,18 @@ object AppUtils {
     fun setAutoJumpEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_AUTO_JUMP, enabled) }
+    }
+
+    // 读取“为每个订阅应用弹出独立气泡”开关。
+    fun isPerAppBubblesEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_PER_APP_BUBBLES, false)
+    }
+
+    // 保存“为每个订阅应用弹出独立气泡”开关。
+    fun setPerAppBubblesEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_PER_APP_BUBBLES, enabled) }
     }
 
     // 读取实验性气泡折叠开关
