@@ -10,6 +10,8 @@
     <string name="setting_bubble_desc">常駐通知を送信し、いつでもバブルを呼び出します</string>
     <string name="setting_auto_jump_title">自動ジャンプ</string>
     <string name="setting_auto_jump_desc">バブル通知をタップすると、バブルパネルを表示せずに直接アプリを開きます。</string>
+    <string name="setting_per_app_bubbles_title">アプリごとに独立したバブル</string>
+    <string name="setting_per_app_bubbles_desc">購読中の各アプリに独立したバブルを表示します。</string>
     <string name="setting_apps_title">購読アプリ</string>
     <string name="setting_apps_count">%1$d 個のアプリを選択中</string>
     <string name="setting_apps_empty">アプリが選択されていません。タップして追加</string>
@@ -64,6 +66,15 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">セキュリティポリシーを表示</string>
     <string name="about_subtitle_export_logs">デバッグログをファイルに保存</string>
+    <string name="about_section_debug">デバッグ</string>
+    <string name="about_clear_bubble_cache">バブルキャッシュをクリア</string>
+    <string name="about_subtitle_clear_bubble_cache">幽霊バブルを修復</string>
+    <string name="dialog_clear_cache_title">System UI のバブルキャッシュをクリア</string>
+    <string name="dialog_clear_cache_message">System UI の不具合で発生した幽霊バブルのキャッシュを消去するには、次の手順を手動で行ってください：\n\n1. 設定 -> 通知 -> バブル を開きます。\n2. グローバルなバブル機能をオフにします。\n3. スマートフォンを再起動します。\n4. バブル機能を再度オンにします。\n\nこれで破損した System UI キャッシュが完全に削除されます。</string>
+    <string name="dialog_clear_cache_confirm">設定を開く</string>
+    <string name="dialog_clear_cache_cancel">キャンセル</string>
+    <string name="setting_experimental_collapse_title">(実験的) バブルを折りたたむ</string>
+    <string name="setting_experimental_collapse_desc">System UI の表示に問題が発生する可能性があります</string>
 
     <string name="about_request_translations">翻訳をリクエスト</string>
     <string name="about_subtitle_request_translations">GitHubのIssueで翻訳に協力してください</string>

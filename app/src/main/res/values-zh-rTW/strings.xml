@@ -10,6 +10,8 @@
     <string name="setting_bubble_desc">發送常駐通知，隨時呼出氣泡</string>
     <string name="setting_auto_jump_title">自動跳轉</string>
     <string name="setting_auto_jump_desc">點擊氣泡通知直接跳轉到對應應用程式，不顯示氣泡面板。</string>
+    <string name="setting_per_app_bubbles_title">獨立應用氣泡</string>
+    <string name="setting_per_app_bubbles_desc">為每個訂閱應用程式彈出一個獨立的氣泡。</string>
     <string name="setting_apps_title">訂閱應用程式</string>
     <string name="setting_apps_count">已選擇 %1$d 個應用程式</string>
     <string name="setting_apps_empty">未選擇任何應用程式，點擊新增</string>

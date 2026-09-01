@@ -10,6 +10,8 @@
     <string name="setting_bubble_desc">상시 알림을 통해 언제든 버블을 호출합니다.</string>
     <string name="setting_auto_jump_title">자동 이동</string>
     <string name="setting_auto_jump_desc">버블 알림을 탭하면 버블 패널을 표시하지 않고 앱으로 직접 이동합니다.</string>
+    <string name="setting_per_app_bubbles_title">앱별 독립 버블</string>
+    <string name="setting_per_app_bubbles_desc">알림을 받은 각 구독 앱에 독립적인 버블을 표시합니다.</string>
     <string name="setting_apps_title">구독 앱</string>
     <string name="setting_apps_count">%1$d개의 앱 선택됨</string>
     <string name="setting_apps_empty">선택된 앱이 없습니다. 탭하여 추가하세요.</string>
@@ -64,6 +66,15 @@
     <string name="about_subtitle_license">GPL-3.0</string>
     <string name="about_subtitle_privacy_policy">보안 정책 보기</string>
     <string name="about_subtitle_export_logs">디버그 로그를 파일로 저장</string>
+    <string name="about_section_debug">디버그</string>
+    <string name="about_clear_bubble_cache">버블 캐시 지우기</string>
+    <string name="about_subtitle_clear_bubble_cache">유령 버블 수정</string>
+    <string name="dialog_clear_cache_title">System UI 버블 캐시 지우기</string>
+    <string name="dialog_clear_cache_message">System UI 오류로 인한 유령 버블 캐시를 지우려면 다음 단계를 수동으로 수행하세요:\n\n1. 설정 -> 알림 -> 버블로 이동합니다.\n2. 전역 버블 기능을 끕니다.\n3. 휴대폰을 다시 시작합니다.\n4. 버블 기능을 다시 켭니다.\n\n이렇게 하면 손상된 System UI 캐시가 완전히 정리됩니다.</string>
+    <string name="dialog_clear_cache_confirm">설정으로 이동</string>
+    <string name="dialog_clear_cache_cancel">취소</string>
+    <string name="setting_experimental_collapse_title">(실험적) 버블 접기</string>
+    <string name="setting_experimental_collapse_desc">System UI 표시 문제가 발생할 수 있습니다</string>
 
     <string name="about_request_translations">번역 요청</string>
     <string name="about_subtitle_request_translations">GitHub의 Issue에서 앱 번역을 도와주세요</string>
