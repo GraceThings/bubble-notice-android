@@ -12,6 +12,8 @@
     <string name="setting_auto_jump_desc">버블 알림을 탭하면 버블 패널을 표시하지 않고 앱으로 직접 이동합니다.</string>
     <string name="setting_per_app_bubbles_title">앱별 독립 버블</string>
     <string name="setting_per_app_bubbles_desc">알림을 받은 각 구독 앱에 독립적인 버블을 표시합니다.</string>
+    <string name="setting_auto_close_after_clear_title">지운 후 버블 닫기</string>
+    <string name="setting_auto_close_after_clear_desc">"모두 지우기"를 누르면 모든 알림을 지우고 버블을 닫습니다.</string>
     <string name="setting_apps_title">구독 앱</string>
     <string name="setting_apps_count">%1$d개의 앱 선택됨</string>
     <string name="setting_apps_empty">선택된 앱이 없습니다. 탭하여 추가하세요.</string>

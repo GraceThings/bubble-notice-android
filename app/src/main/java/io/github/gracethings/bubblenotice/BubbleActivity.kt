@@ -233,9 +233,12 @@ class BubbleActivity : ComponentActivity() {
                                 floatingActionButton = {
                                     androidx.compose.material3.FloatingActionButton(
                                         onClick = {
-                                            if (selectedTab == 0) {
+                                              if (selectedTab == 0) {
                                                   coroutineScope.launch {
-                                                      val snapshotKeys = messages.groupBy { it.packageName to it.senderName }
+                                                      val packageFilterValue = packageFilter.value
+                                                      val snapshotKeys = messages
+                                                          .filter { packageFilterValue == null || it.packageName == packageFilterValue }
+                                                          .groupBy { it.packageName to it.senderName }
                                                           .map { (key, msgList) -> key to (msgList.maxOfOrNull { it.timestamp } ?: 0L) }
                                                           .sortedByDescending { it.second }
                                                           .map { it.first }
@@ -243,6 +246,17 @@ class BubbleActivity : ComponentActivity() {
                                                       for (key in snapshotKeys) {
                                                           UnreadMessageManager.clearMessagesForSender(key.first, key.second)
                                                           kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect (80毫秒以获得更平滑的涟漪效果)
+                                                      }
+
+                                                      if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+                                                          if (packageFilterValue != null) {
+                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelPerAppBubble(context, packageFilterValue)
+                                                          } else if (AppUtils.isPerAppBubblesEnabled(context)) {
+                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelAllPerAppBubbles(context)
+                                                          } else {
+                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelMainBubble(context)
+                                                          }
+                                                          (context as? android.app.Activity)?.finish()
                                                       }
                                                   }
                                               } else {

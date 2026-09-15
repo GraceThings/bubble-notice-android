@@ -38,6 +38,7 @@ object AppUtils {
     private const val KEY_BUBBLE_DND = "bubble_dnd_enabled"
     private const val KEY_EXPERIMENTAL_COLLAPSE = "experimental_collapse_enabled"
     private const val KEY_PER_APP_BUBBLES = "per_app_bubbles_enabled"
+    private const val KEY_CLOSE_BUBBLE_AFTER_CLEAR = "close_bubble_after_clear_enabled"
 
     // 临时拉起目标状?/ One-shot auto-launch target state.
     private var pendingAutoJumpIntent: android.app.PendingIntent? = null
@@ -374,6 +375,18 @@ object AppUtils {
     fun setPerAppBubblesEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_PER_APP_BUBBLES, enabled) }
+    }
+
+    // 读取“清除后关闭气泡”开关。
+    fun isCloseBubbleAfterClearEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_CLOSE_BUBBLE_AFTER_CLEAR, false)
+    }
+
+    // 保存“清除后关闭气泡”开关。
+    fun setCloseBubbleAfterClearEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_CLOSE_BUBBLE_AFTER_CLEAR, enabled) }
     }
 
     // 读取实验性气泡折叠开关

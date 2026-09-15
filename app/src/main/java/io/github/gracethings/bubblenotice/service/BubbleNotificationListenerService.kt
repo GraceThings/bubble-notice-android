@@ -147,26 +147,36 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
         }
 
+        private fun cancelPerAppBubbleLocked(context: android.content.Context, pkgId: String) {
+            val notificationId = perAppNotificationIds.remove(pkgId)
+            val shortcutId = perAppShortcutIds.remove(pkgId)
+            activePerAppBubbles.remove(pkgId)
+            perAppBubbleData.remove(pkgId)
+            dismissedPackages.remove(pkgId)
+            if (notificationId != null) {
+                notificationIdToPackage.remove(notificationId)
+                cancelOwnNotification(context, notificationId)
+            }
+            if (shortcutId != null) {
+                try {
+                    ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(shortcutId))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        fun cancelPerAppBubble(context: android.content.Context, pkgId: String) {
+            synchronized(perAppStateLock) {
+                cancelPerAppBubbleLocked(context, pkgId)
+            }
+        }
+
         fun cancelAllPerAppBubbles(context: android.content.Context) {
             synchronized(perAppStateLock) {
                 val pkgIds = activePerAppBubbles.keys.toList()
                 for (pkgId in pkgIds) {
-                    val notificationId = perAppNotificationIds.remove(pkgId)
-                    val shortcutId = perAppShortcutIds.remove(pkgId)
-                    activePerAppBubbles.remove(pkgId)
-                    perAppBubbleData.remove(pkgId)
-                    dismissedPackages.remove(pkgId)
-                    if (notificationId != null) {
-                        notificationIdToPackage.remove(notificationId)
-                        cancelOwnNotification(context, notificationId)
-                    }
-                    if (shortcutId != null) {
-                        try {
-                            ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(shortcutId))
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
+                    cancelPerAppBubbleLocked(context, pkgId)
                 }
             }
         }

@@ -64,6 +64,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
     var isTakeOver by remember { mutableStateOf(AppUtils.isTakeOverNotifications(context)) }
     var isAutoJump by remember { mutableStateOf(AppUtils.isAutoJumpEnabled(context)) }
     var isPerAppBubbles by remember { mutableStateOf(AppUtils.isPerAppBubblesEnabled(context)) }
+    var isCloseBubbleAfterClear by remember { mutableStateOf(AppUtils.isCloseBubbleAfterClearEnabled(context)) }
     var isExperimentalCollapse by remember { mutableStateOf(AppUtils.isExperimentalCollapseEnabled(context)) }
     var showGuideDialog by remember { mutableStateOf(false) }
 
@@ -80,6 +81,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     isTakeOver = AppUtils.isTakeOverNotifications(context)
                     isAutoJump = AppUtils.isAutoJumpEnabled(context)
                     isPerAppBubbles = AppUtils.isPerAppBubblesEnabled(context)
+                    isCloseBubbleAfterClear = AppUtils.isCloseBubbleAfterClearEnabled(context)
                     
                     val prefs = context.getSharedPreferences("bubble_prefs", android.content.Context.MODE_PRIVATE)
                     val guideShown = prefs.getBoolean("permission_guide_shown", false)
@@ -196,6 +198,17 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     } else {
                         BubbleNotificationListenerService.cancelAllPerAppBubbles(context)
                     }
+                }
+            )
+
+            SettingSwitchCard(
+                title = stringResource(R.string.setting_auto_close_after_clear_title),
+                subtitle = stringResource(R.string.setting_auto_close_after_clear_desc),
+                checked = isCloseBubbleAfterClear,
+                shape = middleShape,
+                onCheckedChange = {
+                    isCloseBubbleAfterClear = it
+                    AppUtils.setCloseBubbleAfterClearEnabled(context, it)
                 }
             )
 
