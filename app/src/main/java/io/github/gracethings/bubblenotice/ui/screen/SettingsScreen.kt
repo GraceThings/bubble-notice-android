@@ -31,7 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.animation.core.*
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.ui.draw.scale
 import androidx.compose.animation.animateColorAsState
@@ -65,7 +64,6 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
     var isAutoJump by remember { mutableStateOf(AppUtils.isAutoJumpEnabled(context)) }
     var isPerAppBubbles by remember { mutableStateOf(AppUtils.isPerAppBubblesEnabled(context)) }
     var isCloseBubbleAfterClear by remember { mutableStateOf(AppUtils.isCloseBubbleAfterClearEnabled(context)) }
-    var isExperimentalCollapse by remember { mutableStateOf(AppUtils.isExperimentalCollapseEnabled(context)) }
     var showGuideDialog by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -211,19 +209,6 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
                     AppUtils.setCloseBubbleAfterClearEnabled(context, it)
                 }
             )
-
-            AnimatedVisibility(visible = isAutoJump) {
-                SettingSwitchCard(
-                    title = stringResource(R.string.setting_experimental_collapse_title),
-                    subtitle = stringResource(R.string.setting_experimental_collapse_desc),
-                    checked = isExperimentalCollapse,
-                    shape = middleShape,
-                    onCheckedChange = {
-                        isExperimentalCollapse = it
-                        AppUtils.setExperimentalCollapseEnabled(context, it)
-                    }
-                )
-            }
 
             SettingSwitchCard(
                 title = stringResource(R.string.setting_take_over_title),

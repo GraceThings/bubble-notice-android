@@ -244,11 +244,15 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val startedAt = System.currentTimeMillis()
                 while (System.currentTimeMillis() - startedAt < 3000L) {
                     val currentActivity = activityRef.get()
-                    if (currentActivity == null || currentActivity.isDestroyed) {
+                    if (currentActivity == null ||
+                        currentActivity.isDestroyed ||
+                        currentActivity.isFinishing
+                    ) {
                         break
                     }
                     kotlinx.coroutines.delay(50L)
                 }
+                kotlinx.coroutines.delay(150L)
                 if (!AppUtils.isCloseBubbleAfterClearEnabled(context)) {
                     return@launch
                 }

@@ -45,6 +45,8 @@ object AppUtils {
     private const val KEY_PER_APP_BUBBLES = "per_app_bubbles_enabled"
     private const val KEY_CLOSE_BUBBLE_AFTER_CLEAR = "close_bubble_after_clear_enabled"
 
+    private const val PENDING_AUTO_JUMP_DISPLAY_WINDOW_MS = 6000L
+
     private data class PendingAutoJump(
         val intent: android.app.PendingIntent,
         val pkgId: String,
@@ -317,7 +319,9 @@ object AppUtils {
     fun consumePendingAutoJump(requestedPkgId: String? = null): Triple<android.app.PendingIntent, String?, String?>? {
         if (requestedPkgId != null) {
             val entry = pendingAutoJumpByPkg.remove(requestedPkgId)
-            if (entry != null) {
+            if (entry != null &&
+                System.currentTimeMillis() - entry.timestamp <= PENDING_AUTO_JUMP_DISPLAY_WINDOW_MS
+            ) {
                 return Triple(entry.intent, entry.pkgId, entry.senderName)
             }
             return null
@@ -326,6 +330,12 @@ object AppUtils {
         val firstEntry = pendingAutoJumpByPkg.entries.minByOrNull { it.value.timestamp }
             ?: return null
         pendingAutoJumpByPkg.remove(firstEntry.key)
+        if (System.currentTimeMillis() - firstEntry.value.timestamp >
+            PENDING_AUTO_JUMP_DISPLAY_WINDOW_MS
+        ) {
+            return null
+        }
+
         return Triple(
             firstEntry.value.intent,
             firstEntry.value.pkgId,
