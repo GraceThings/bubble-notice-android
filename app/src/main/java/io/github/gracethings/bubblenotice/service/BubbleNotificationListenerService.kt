@@ -43,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
+import android.content.Context
 
 class BubbleNotificationListenerService : NotificationListenerService() {
 
@@ -225,26 +226,65 @@ class BubbleNotificationListenerService : NotificationListenerService() {
          * bubble surface, which can leave a stale/transparent window on
          * some devices.
          */
-        fun closeBubbleAfterActivityClosed(
-            context: android.content.Context,
+        fun closeAfterActivityCleared(
+            context: Context,
             packageFilter: String?
         ) {
-            val applicationContext = context.applicationContext
+            val activity = context as? android.app.Activity
+            if (activity == null) {
+                appScope.launch {
+                    kotlinx.coroutines.delay(150L)
+                    closeBubbleIfEmpty(context, packageFilter)
+                }
+                return
+            }
+
+            val activityRef = java.lang.ref.WeakReference(activity)
             appScope.launch {
-                kotlinx.coroutines.delay(300L)
-                if (AppUtils.isCloseBubbleAfterClearEnabled(applicationContext)) {
-                    if (AppUtils.isPerAppBubblesEnabled(applicationContext)) {
-                        if (packageFilter != null) {
-                            if (!UnreadMessageManager.hasMessagesForPackage(packageFilter)) {
-                                cancelPerAppBubble(applicationContext, packageFilter)
-                            }
-                        } else if (UnreadMessageManager.messagesFlow.value.isEmpty()) {
-                            cancelAllPerAppBubbles(applicationContext)
+                val startedAt = System.currentTimeMillis()
+                while (System.currentTimeMillis() - startedAt < 3000L) {
+                    val currentActivity = activityRef.get()
+                    if (currentActivity == null || currentActivity.isDestroyed) {
+                        break
+                    }
+                    kotlinx.coroutines.delay(50L)
+                }
+                if (!AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+                    return@launch
+                }
+                if (AppUtils.isPerAppBubblesEnabled(context)) {
+                    if (packageFilter != null) {
+                        if (!UnreadMessageManager.hasMessagesForPackage(packageFilter)) {
+                            cancelPerAppBubble(context, packageFilter)
                         }
                     } else if (UnreadMessageManager.messagesFlow.value.isEmpty()) {
-                        cancelMainBubble(applicationContext)
+                        cancelAllPerAppBubbles(context)
                     }
+                } else if (UnreadMessageManager.messagesFlow.value.isEmpty()) {
+                    cancelMainBubble(context)
                 }
+            }
+        }
+
+        private fun closeBubbleIfEmpty(context: Context, packageFilter: String?) {
+            val isPerAppEnabled = AppUtils.isPerAppBubblesEnabled(context)
+            val hasMessages = if (isPerAppEnabled && packageFilter != null) {
+                UnreadMessageManager.hasMessagesForPackage(packageFilter)
+            } else {
+                UnreadMessageManager.messagesFlow.value.isNotEmpty()
+            }
+            if (hasMessages) {
+                return
+            }
+
+            if (isPerAppEnabled) {
+                if (packageFilter != null) {
+                    cancelPerAppBubble(context, packageFilter)
+                } else {
+                    cancelAllPerAppBubbles(context)
+                }
+            } else {
+                cancelMainBubble(context)
             }
         }
 
@@ -410,36 +450,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
-                        val hadActiveBubble = if (isPerAppBubbles) {
-                            synchronized(perAppStateLock) {
-                                activePerAppBubbles.containsKey(pkgId)
-                            }
-                        } else {
-                            synchronized(perAppStateLock) {
-                                lastBuilder != null && !isBubbleDismissed
-                            }
-                        }
-                        if (!hadActiveBubble) {
-                            val launched = AppUtils.openNotificationTarget(
-                                this@BubbleNotificationListenerService,
-                                pkgId,
-                                originalIntent
-                            )
-                            if (launched) {
-                                if (isPerAppBubbles) {
-                                    UnreadMessageManager.clearMessagesForPackage(pkgId)
-                                    clearPerAppBubbleIfEmpty(this@BubbleNotificationListenerService, pkgId)
-                                } else {
-                                    UnreadMessageManager.clearAll()
-                                    autoCloseBubbleIfEmpty(this@BubbleNotificationListenerService, null)
-                                }
-                                packageStateMap.remove(pkgId)
-                                return@launch
-                            }
-                            AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
-                        } else {
-                            AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
-                        }
+                        AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
                     }
                 }
 
@@ -504,6 +515,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             lastBubbleIntent = null
             lastBubbleIcon = null
             lastBuilder = null
+            AppUtils.clearPendingAutoJump(null)
             AppLogger.d("BubbleService", "Main bubble was dismissed by user")
             return
         }
@@ -513,6 +525,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             if (pkgId != null && isUserDismissal) {
                 dismissedPackages.add(pkgId)
                 activePerAppBubbles.remove(pkgId)
+                AppUtils.clearPendingAutoJump(pkgId)
                 perAppBubbleData.remove(pkgId)
                 notificationIdToPackage.remove(sbn.id)
                 perAppNotificationIds.remove(pkgId)

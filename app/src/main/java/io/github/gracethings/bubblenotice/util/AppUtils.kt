@@ -45,10 +45,6 @@ object AppUtils {
     private const val KEY_PER_APP_BUBBLES = "per_app_bubbles_enabled"
     private const val KEY_CLOSE_BUBBLE_AFTER_CLEAR = "close_bubble_after_clear_enabled"
 
-    // 临时拉起目标状?/ One-shot auto-launch target state.
-    private var pendingAutoJumpIntent: android.app.PendingIntent? = null
-    private var pendingAutoJumpTimestamp: Long = 0L
-    private var pendingAutoJumpPkgId: String? = null
     private data class PendingAutoJump(
         val intent: android.app.PendingIntent,
         val pkgId: String,
@@ -292,26 +288,24 @@ object AppUtils {
     }
 
     // 自动跳转待处理数据 / Pending auto-jump data
-    private var pendingAutoJumpSenderName: String? = null
-
     @Synchronized
     fun setPendingAutoJump(intent: android.app.PendingIntent?, pkgId: String?, senderName: String? = null) {
-        pendingAutoJumpIntent = intent
-        pendingAutoJumpPkgId = pkgId
-        pendingAutoJumpSenderName = senderName
-        pendingAutoJumpTimestamp = if (intent != null) System.currentTimeMillis() else 0L
-        if (pkgId == null) {
-            return
-        }
-        if (intent == null) {
-            pendingAutoJumpByPkg.remove(pkgId)
-        } else {
+        if (pkgId != null && intent != null) {
             pendingAutoJumpByPkg[pkgId] = PendingAutoJump(
                 intent = intent,
                 pkgId = pkgId,
                 senderName = senderName,
-                timestamp = pendingAutoJumpTimestamp
+                timestamp = System.currentTimeMillis()
             )
+        }
+    }
+
+    @Synchronized
+    fun clearPendingAutoJump(pkgId: String?) {
+        if (pkgId == null) {
+            pendingAutoJumpByPkg.clear()
+        } else {
+            pendingAutoJumpByPkg.remove(pkgId)
         }
     }
 
@@ -323,33 +317,20 @@ object AppUtils {
     fun consumePendingAutoJump(requestedPkgId: String? = null): Triple<android.app.PendingIntent, String?, String?>? {
         if (requestedPkgId != null) {
             val entry = pendingAutoJumpByPkg.remove(requestedPkgId)
-            pendingAutoJumpIntent = null
-            pendingAutoJumpTimestamp = 0L
-            pendingAutoJumpPkgId = null
-            pendingAutoJumpSenderName = null
-
-            if (entry != null && System.currentTimeMillis() - entry.timestamp <= 6000L) {
+            if (entry != null) {
                 return Triple(entry.intent, entry.pkgId, entry.senderName)
             }
             return null
         }
 
-        val target = pendingAutoJumpIntent
-        val timestamp = pendingAutoJumpTimestamp
-        val pkgId = pendingAutoJumpPkgId
-        val senderName = pendingAutoJumpSenderName
-        pendingAutoJumpIntent = null
-        pendingAutoJumpTimestamp = 0L
-        pendingAutoJumpPkgId = null
-        pendingAutoJumpSenderName = null
-        pendingAutoJumpByPkg.clear()
-
-        // 6000ms 阈值：只在气泡刚刚弹出（flyout 显示阶段）点击时触发自动跳转。
-        // 结束后点击气泡本身，将只展开气泡不自动跳转。
-        if (target != null && System.currentTimeMillis() - timestamp <= 6000L) {
-            return Triple(target, pkgId, senderName)
-        }
-        return null
+        val firstEntry = pendingAutoJumpByPkg.entries.minByOrNull { it.value.timestamp }
+            ?: return null
+        pendingAutoJumpByPkg.remove(firstEntry.key)
+        return Triple(
+            firstEntry.value.intent,
+            firstEntry.value.pkgId,
+            firstEntry.value.senderName
+        )
     }
 
     // 安全地触发 PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)

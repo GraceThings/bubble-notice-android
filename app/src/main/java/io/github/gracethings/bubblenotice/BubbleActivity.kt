@@ -356,10 +356,8 @@ class BubbleActivity : ComponentActivity() {
         if (remainingMessages || !AppUtils.isCloseBubbleAfterClearEnabled(context)) {
             return
         }
-        io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.closeBubbleAfterActivityClosed(
-            context,
-            packageFilter
-        )
+        io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
+            .closeAfterActivityCleared(context, packageFilter)
         (context as? android.app.Activity)?.finish()
     }
 
