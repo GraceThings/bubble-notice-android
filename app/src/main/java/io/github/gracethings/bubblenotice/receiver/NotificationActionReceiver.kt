@@ -8,6 +8,10 @@ import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerServ
 import io.github.gracethings.bubblenotice.util.AppLogger
 import io.github.gracethings.bubblenotice.util.AppUtils
 import io.github.gracethings.bubblenotice.util.UnreadMessageManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -22,19 +26,29 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 intent.getParcelableExtra("EXTRA_ORIGINAL_INTENT") as? android.app.PendingIntent
             }
             if (pkg != null) {
+                val sentOriginalIntent = originalIntent != null &&
+                    AppUtils.sendPendingIntentAllowed(context, originalIntent)
                 if (senderName != null) {
                     UnreadMessageManager.clearMessagesForSender(pkg, senderName)
                 } else {
                     UnreadMessageManager.clearMessagesForPackage(pkg)
                 }
-                if (originalIntent != null) {
-                    AppLogger.d("NotificationActionReceiver", "Sending original intent")
-                    AppUtils.sendPendingIntentAllowed(context, originalIntent)
-                } else {
-                    AppLogger.d("NotificationActionReceiver", "Launching app directly")
-                    AppUtils.launchApp(context, pkg)
-                }
                 BubbleNotificationListenerService.suppressNotificationInShade(context, pkg)
+                BubbleNotificationListenerService.autoCloseBubbleIfEmpty(context, pkg)
+
+                val pendingResult = goAsync()
+                val appContext = context.applicationContext
+                CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                    try {
+                        AppUtils.ensureAppForegroundAfterLaunch(
+                            appContext,
+                            pkg,
+                            sentOriginalIntent
+                        )
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
             } else {
                 MainActivity.sendBubbleNotification(context)
             }

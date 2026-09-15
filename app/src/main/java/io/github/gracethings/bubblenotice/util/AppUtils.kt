@@ -18,7 +18,12 @@ package io.github.gracethings.bubblenotice.util
 
 import android.content.Context
 import android.content.Intent
+import android.app.AppOpsManager
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.drawable.toBitmap
 import android.os.Process
@@ -216,7 +221,7 @@ object AppUtils {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
         
-        val parts = identifier.split(":")
+        val parts = identifier.split(":", limit = 2)
         val pkg = parts[0]
         val isWork = if (parts.size > 1) parts[1] == "1" else false
         
@@ -224,16 +229,65 @@ object AppUtils {
             val profileIsWork = profile != android.os.Process.myUserHandle()
             profileIsWork == isWork
         } ?: android.os.Process.myUserHandle()
-        
+
+        val options = android.app.ActivityOptions.makeBasic()
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            options.setPendingIntentBackgroundActivityStartMode(
+                android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        }
+
+        // LauncherApps is less affected by background-activity-start restrictions and
+        // brings an existing task to the foreground instead of creating a detached task.
         try {
             val activities = launcherApps.getActivityList(pkg, targetProfile)
-            if (activities.isNotEmpty()) {
-                launcherApps.startMainActivity(activities[0].componentName, targetProfile, null, null)
-                return true
+            for (activity in activities) {
+                try {
+                    launcherApps.startMainActivity(
+                        activity.componentName,
+                        targetProfile,
+                        null,
+                        options.toBundle()
+                    )
+                    AppLogger.i(
+                        "AppUtils",
+                        "Launched $pkg via LauncherApps: ${activity.componentName}"
+                    )
+                    return true
+                } catch (e: Exception) {
+                    AppLogger.w(
+                        "AppUtils",
+                        "LauncherApps launch failed for ${activity.componentName}: ${e.message}"
+                    )
+                    e.printStackTrace()
+                }
             }
         } catch (e: Exception) {
+            AppLogger.w("AppUtils", "Failed to query launcher activities for $pkg: ${e.message}")
             e.printStackTrace()
         }
+
+        // Fall back for launchers that do not expose a launchable activity through
+        // LauncherApps but still provide a PackageManager launch intent.
+        if (!isWork) {
+            try {
+                val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
+                if (launchIntent != null) {
+                    launchIntent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                    )
+                    context.startActivity(launchIntent)
+                    AppLogger.i("AppUtils", "Launched $pkg via PackageManager")
+                    return true
+                }
+            } catch (e: Exception) {
+                AppLogger.w("AppUtils", "PackageManager launch failed for $pkg: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        AppLogger.w("AppUtils", "No launchable activity found for $identifier")
         return false
     }
 
@@ -298,18 +352,161 @@ object AppUtils {
         return null
     }
 
-    // 安全地触�?PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
-    fun sendPendingIntentAllowed(context: Context, pendingIntent: android.app.PendingIntent) {
+    // 安全地触发 PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
+    fun sendPendingIntentAllowed(context: Context, pendingIntent: android.app.PendingIntent): Boolean {
+        val options = android.app.ActivityOptions.makeBasic()
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            options.setPendingIntentBackgroundActivityStartMode(
+                android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        }
+
         try {
-            val options = android.app.ActivityOptions.makeBasic()
-            if (android.os.Build.VERSION.SDK_INT >= 34) {
-                options.setPendingIntentBackgroundActivityStartMode(
-                    android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                )
-            }
             pendingIntent.send(context, 0, null, null, null, null, options.toBundle())
-        } catch (e: Exception) {
+            return true
+        } catch (e: android.app.PendingIntent.CanceledException) {
+            AppLogger.w("AppUtils", "PendingIntent was canceled before launch")
             e.printStackTrace()
+        } catch (e: Exception) {
+            AppLogger.w("AppUtils", "Failed to send pending intent with activity options: ${e.message}")
+            e.printStackTrace()
+        }
+
+        return try {
+            pendingIntent.send()
+            true
+        } catch (e: android.app.PendingIntent.CanceledException) {
+            AppLogger.w("AppUtils", "PendingIntent was canceled before launch")
+            e.printStackTrace()
+            false
+        } catch (e: Exception) {
+            AppLogger.w("AppUtils", "Failed to send pending intent: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun ensureAppForegroundAfterLaunch(
+        context: Context,
+        identifier: String,
+        launchRequested: Boolean
+    ): Boolean {
+        val packageName = identifier.substringBefore(":")
+        if (launchRequested && waitForPackageForeground(context, packageName, 700L)) {
+            AppLogger.d("AppUtils", "Original notification intent opened $packageName")
+            return true
+        }
+
+        AppLogger.w(
+            "AppUtils",
+            "Notification target $packageName was not confirmed in the foreground; launching directly"
+        )
+        val fallbackLaunched = launchApp(context, identifier)
+        if (fallbackLaunched && waitForPackageForeground(context, packageName, 500L)) {
+            AppLogger.d("AppUtils", "Fallback launch opened $packageName")
+        }
+        return fallbackLaunched
+    }
+
+    /**
+     * Launch the original notification's content intent, falling back to the
+     * app's launcher activity. Used both from BubbleActivity and from the
+     * notification listener where background PendingIntent launch is required.
+     */
+    suspend fun openNotificationTarget(
+        context: Context,
+        identifier: String?,
+        pendingIntent: android.app.PendingIntent?
+    ): Boolean {
+        if (identifier == null) return false
+        val packageName = identifier.substringBefore(":")
+        val sentOriginalIntent = if (pendingIntent != null) {
+            sendPendingIntentAllowed(context, pendingIntent)
+        } else {
+            false
+        }
+        if (sentOriginalIntent && waitForPackageForeground(context, packageName, 500L)) {
+            AppLogger.d("AppUtils", "Original notification intent opened $packageName")
+            return true
+        }
+
+        AppLogger.w(
+            "AppUtils",
+            "Notification target $packageName was not confirmed in the foreground; launching directly"
+        )
+        val fallbackLaunched = launchApp(context, identifier)
+        if (fallbackLaunched && waitForPackageForeground(context, packageName, 500L)) {
+            AppLogger.d("AppUtils", "Fallback launch opened $packageName")
+        }
+        return fallbackLaunched
+    }
+
+    private suspend fun waitForPackageForeground(
+        context: Context,
+        packageName: String,
+        timeoutMs: Long
+    ): Boolean {
+        val startedAt = SystemClock.elapsedRealtime()
+        while (SystemClock.elapsedRealtime() - startedAt < timeoutMs) {
+            if (isPackageForeground(context, packageName)) {
+                return true
+            }
+            delay(100L)
+        }
+        return isPackageForeground(context, packageName)
+    }
+
+    private fun isPackageForeground(context: Context, packageName: String): Boolean {
+        if (hasUsageStatsPermission(context)) {
+            val usageStats = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+            if (usageStats != null) {
+                val now = System.currentTimeMillis()
+                val events = try {
+                    usageStats.queryEvents(now - 2_000L, now)
+                } catch (e: Exception) {
+                    AppLogger.w("AppUtils", "Usage events query failed: ${e.message}")
+                    null
+                }
+                if (events != null) {
+                    val event = UsageEvents.Event()
+                    while (events.hasNextEvent()) {
+                        events.getNextEvent(event)
+                        if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED &&
+                            event.packageName == packageName
+                        ) {
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+            ?: return false
+        @Suppress("DEPRECATION")
+        val processes = try {
+            activityManager.runningAppProcesses
+        } catch (e: Exception) {
+            null
+        } ?: return false
+
+        return processes.any { process ->
+            (process.processName == packageName || process.processName.startsWith("$packageName:")) &&
+                process.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        }
+    }
+
+    private fun hasUsageStatsPermission(context: Context): Boolean {
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            ?: return false
+        return try {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                context.packageName
+            ) == AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            false
         }
     }
 

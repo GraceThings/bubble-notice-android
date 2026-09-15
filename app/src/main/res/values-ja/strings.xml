@@ -12,8 +12,8 @@
     <string name="setting_auto_jump_desc">バブル通知をタップすると、バブルパネルを表示せずに直接アプリを開きます。</string>
     <string name="setting_per_app_bubbles_title">アプリごとに独立したバブル</string>
     <string name="setting_per_app_bubbles_desc">購読中の各アプリに独立したバブルを表示します。</string>
-    <string name="setting_auto_close_after_clear_title">クリア後にバブルを閉じる</string>
-    <string name="setting_auto_close_after_clear_desc">「すべてクリア」をタップすると、すべての通知を消去してバブルを閉じます。</string>
+    <string name="setting_auto_close_after_clear_title">バブルを自動で閉じる</string>
+    <string name="setting_auto_close_after_clear_desc">通知がクリアされると、バブルが自動的に閉じます。</string>
     <string name="setting_apps_title">購読アプリ</string>
     <string name="setting_apps_count">%1$d 個のアプリを選択中</string>
     <string name="setting_apps_empty">アプリが選択されていません。タップして追加</string>

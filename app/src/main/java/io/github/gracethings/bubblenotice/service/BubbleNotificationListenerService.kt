@@ -78,6 +78,8 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         private val perAppStateLock = Any()
         private val programmaticCancellationIds = mutableSetOf<Int>()
 
+        private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
         // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡
         // Store last bubble notification data for suppressing shade while keeping bubble
         private var lastBubbleIntent: PendingIntent? = null
@@ -137,8 +139,18 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         }
 
         private fun cancelOwnNotification(context: android.content.Context, notificationId: Int) {
-            synchronized(perAppStateLock) {
-                programmaticCancellationIds.add(notificationId)
+            val isActive = try {
+                NotificationManagerCompat.from(context).activeNotifications.any {
+                    it.id == notificationId
+                }
+            } catch (e: Exception) {
+                false
+            }
+
+            if (isActive) {
+                synchronized(perAppStateLock) {
+                    programmaticCancellationIds.add(notificationId)
+                }
             }
             try {
                 NotificationManagerCompat.from(context).cancel(notificationId)
@@ -181,18 +193,83 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
         }
 
+        fun autoCloseBubbleIfEmpty(
+            context: android.content.Context,
+            packageFilter: String?
+        ): Boolean {
+            if (!AppUtils.isCloseBubbleAfterClearEnabled(context)) return false
+
+            val isPerAppBubblesEnabled = AppUtils.isPerAppBubblesEnabled(context)
+            val hasRemainingMessages = if (isPerAppBubblesEnabled && packageFilter != null) {
+                UnreadMessageManager.hasMessagesForPackage(packageFilter)
+            } else {
+                UnreadMessageManager.messagesFlow.value.isNotEmpty()
+            }
+            if (hasRemainingMessages) return false
+
+            if (isPerAppBubblesEnabled) {
+                if (packageFilter != null) {
+                    cancelPerAppBubble(context, packageFilter)
+                } else {
+                    cancelAllPerAppBubbles(context)
+                }
+            } else {
+                cancelMainBubble(context)
+            }
+            return true
+        }
+
+        /**
+         * Close the bubble after its expanded activity has been finished. This
+         * avoids cancelling the notification while SystemUI still owns the
+         * bubble surface, which can leave a stale/transparent window on
+         * some devices.
+         */
+        fun closeBubbleAfterActivityClosed(
+            context: android.content.Context,
+            packageFilter: String?
+        ) {
+            val applicationContext = context.applicationContext
+            appScope.launch {
+                kotlinx.coroutines.delay(300L)
+                if (AppUtils.isCloseBubbleAfterClearEnabled(applicationContext)) {
+                    if (AppUtils.isPerAppBubblesEnabled(applicationContext)) {
+                        if (packageFilter != null) {
+                            if (!UnreadMessageManager.hasMessagesForPackage(packageFilter)) {
+                                cancelPerAppBubble(applicationContext, packageFilter)
+                            }
+                        } else if (UnreadMessageManager.messagesFlow.value.isEmpty()) {
+                            cancelAllPerAppBubbles(applicationContext)
+                        }
+                    } else if (UnreadMessageManager.messagesFlow.value.isEmpty()) {
+                        cancelMainBubble(applicationContext)
+                    }
+                }
+            }
+        }
+
+        /**
+         * Close one app bubble when that app has no unread cards. Unlike
+         * autoCloseBubbleIfEmpty, this never clears unrelated per-app bubbles.
+         */
+        fun clearPerAppBubbleIfEmpty(context: android.content.Context, pkgId: String): Boolean {
+            if (!AppUtils.isPerAppBubblesEnabled(context)) return false
+            if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+                if (UnreadMessageManager.hasMessagesForPackage(pkgId)) return false
+                cancelPerAppBubble(context, pkgId)
+                return true
+            }
+            return false
+        }
+
         fun cancelMainBubble(context: android.content.Context) {
-            val shouldCancel = synchronized(perAppStateLock) {
-                val shouldCancel = lastBuilder != null && !isBubbleDismissed
+            synchronized(perAppStateLock) {
                 lastBubbleIntent = null
                 lastBubbleIcon = null
                 lastBuilder = null
                 isBubbleDismissed = false
-                shouldCancel
             }
-            if (shouldCancel) {
-                cancelOwnNotification(context, MAIN_BUBBLE_NOTIFICATION_ID)
-            }
+            cancelOwnNotification(context, MAIN_BUBBLE_NOTIFICATION_ID)
         }
     }
 
@@ -333,7 +410,36 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
-                        AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
+                        val hadActiveBubble = if (isPerAppBubbles) {
+                            synchronized(perAppStateLock) {
+                                activePerAppBubbles.containsKey(pkgId)
+                            }
+                        } else {
+                            synchronized(perAppStateLock) {
+                                lastBuilder != null && !isBubbleDismissed
+                            }
+                        }
+                        if (!hadActiveBubble) {
+                            val launched = AppUtils.openNotificationTarget(
+                                this@BubbleNotificationListenerService,
+                                pkgId,
+                                originalIntent
+                            )
+                            if (launched) {
+                                if (isPerAppBubbles) {
+                                    UnreadMessageManager.clearMessagesForPackage(pkgId)
+                                    clearPerAppBubbleIfEmpty(this@BubbleNotificationListenerService, pkgId)
+                                } else {
+                                    UnreadMessageManager.clearAll()
+                                    autoCloseBubbleIfEmpty(this@BubbleNotificationListenerService, null)
+                                }
+                                packageStateMap.remove(pkgId)
+                                return@launch
+                            }
+                            AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
+                        } else {
+                            AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
+                        }
                     }
                 }
 

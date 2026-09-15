@@ -38,6 +38,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.combinedClickable
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
 
 import android.content.Context
 import android.content.Intent
@@ -169,14 +170,29 @@ class BubbleActivity : ComponentActivity() {
                                     coroutineScope.launch {
                                         kotlinx.coroutines.delay(150)
                                         try {
-                                            AppUtils.sendPendingIntentAllowed(this@BubbleActivity, pendingIntent)
+                                            val sentOriginalIntent = sendNotificationTargetIntent(
+                                                this@BubbleActivity,
+                                                targetPkgId,
+                                                pendingIntent
+                                            )
                                             if (targetPkgId != null && targetSenderName != null) {
                                                 // 仅清除该发送者的通知组 / Only clear this sender's notification group
                                                 UnreadMessageManager.clearMessagesForSender(targetPkgId, targetSenderName)
                                             } else if (targetPkgId != null) {
                                                 UnreadMessageManager.clearMessagesForPackage(targetPkgId)
                                             }
-                                            if (AppUtils.isExperimentalCollapseEnabled(this@BubbleActivity)) {
+                                            val launched = targetPkgId != null &&
+                                                AppUtils.ensureAppForegroundAfterLaunch(
+                                                    this@BubbleActivity,
+                                                    targetPkgId,
+                                                    sentOriginalIntent
+                                                )
+                                            closeBubbleIfEmptyAfterLaunch(
+                                                this@BubbleActivity,
+                                                packageFilter.value,
+                                                if (launched) 400L else 150L
+                                            )
+                                            if (!launched && AppUtils.isExperimentalCollapseEnabled(this@BubbleActivity)) {
                                                 this@BubbleActivity.moveTaskToBack(true)
                                             }
                                         } catch (e: Exception) {
@@ -248,16 +264,7 @@ class BubbleActivity : ComponentActivity() {
                                                           kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect (80毫秒以获得更平滑的涟漪效果)
                                                       }
 
-                                                      if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
-                                                          if (packageFilterValue != null) {
-                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelPerAppBubble(context, packageFilterValue)
-                                                          } else if (AppUtils.isPerAppBubblesEnabled(context)) {
-                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelAllPerAppBubbles(context)
-                                                          } else {
-                                                              io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.cancelMainBubble(context)
-                                                          }
-                                                          (context as? android.app.Activity)?.finish()
-                                                      }
+                                                      closeBubbleIfEmptyAfterActivity(context, packageFilterValue)
                                                   }
                                               } else {
                                                 showAppSelector = true
@@ -309,6 +316,51 @@ class BubbleActivity : ComponentActivity() {
         if (intent == null) return
         packageFilter.value = intent.getStringExtra("EXTRA_PACKAGE_NAME")
         AppLogger.d("BubbleActivity", "handleIntent called with action: ${intent.action}")
+    }
+
+    private fun sendNotificationTargetIntent(
+        context: Context,
+        packageId: String?,
+        pendingIntent: android.app.PendingIntent?
+    ): Boolean {
+        if (packageId == null) return false
+        val sent = pendingIntent != null &&
+            AppUtils.sendPendingIntentAllowed(context, pendingIntent)
+        AppLogger.d(
+            "BubbleActivity",
+            "Original notification intent send result for $packageId: $sent"
+        )
+        return sent
+    }
+
+    private suspend fun closeBubbleIfEmptyAfterLaunch(
+        context: Context,
+        packageFilter: String?,
+        delayMs: Long
+    ) {
+        if (delayMs > 0L) {
+            kotlinx.coroutines.delay(delayMs)
+        }
+        closeBubbleIfEmptyAfterActivity(context, packageFilter)
+    }
+
+    private fun closeBubbleIfEmptyAfterActivity(
+        context: Context,
+        packageFilter: String?
+    ) {
+        val remainingMessages = if (packageFilter != null) {
+            UnreadMessageManager.hasMessagesForPackage(packageFilter)
+        } else {
+            UnreadMessageManager.messagesFlow.value.isNotEmpty()
+        }
+        if (remainingMessages || !AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+            return
+        }
+        io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.closeBubbleAfterActivityClosed(
+            context,
+            packageFilter
+        )
+        (context as? android.app.Activity)?.finish()
     }
 
     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -431,6 +483,7 @@ class BubbleActivity : ComponentActivity() {
                         coroutineScope.launch {
                             offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium))
                             UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
+                            closeBubbleIfEmptyAfterActivity(context, packageFilter.value)
                         }
                     }
                     .padding(horizontal = 24.dp),
@@ -476,15 +529,23 @@ class BubbleActivity : ComponentActivity() {
                     }
                     .clickable {
                         val pendingIntent = group.messages.firstOrNull()?.contentIntent
-                        if (pendingIntent != null) {
-                            AppUtils.sendPendingIntentAllowed(context, pendingIntent)
-                        } else {
-                            AppUtils.launchApp(context, group.packageName)
-                        }
+                        val sentOriginalIntent = sendNotificationTargetIntent(
+                            context,
+                            group.packageName,
+                            pendingIntent
+                        )
                         UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
                         coroutineScope.launch {
-                            kotlinx.coroutines.delay(100)
-                            (context as? android.app.Activity)?.finish()
+                            val launched = AppUtils.ensureAppForegroundAfterLaunch(
+                                context,
+                                group.packageName,
+                                sentOriginalIntent
+                            )
+                            closeBubbleIfEmptyAfterLaunch(
+                                context,
+                                packageFilter.value,
+                                if (launched) 400L else 150L
+                            )
                         }
                     },
                 shape = shape,
@@ -630,6 +691,7 @@ class BubbleActivity : ComponentActivity() {
                                         try {
                                             action.actionIntent.send()
                                             UnreadMessageManager.removeMessage(msg)
+                                            closeBubbleIfEmptyAfterActivity(context, packageFilter.value)
                                         } catch(e: Exception) {
                                             e.printStackTrace()
                                         }
@@ -677,6 +739,7 @@ class BubbleActivity : ComponentActivity() {
                                     try {
                                         action.actionIntent.send(context, 0, intent)
                                         UnreadMessageManager.removeMessage(msg)
+                                        closeBubbleIfEmptyAfterActivity(context, packageFilter.value)
                                     } catch(e: Exception) {
                                         e.printStackTrace()
                                     }
