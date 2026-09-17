@@ -3,6 +3,8 @@
     <style name="Theme.BubbleNotice" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <style name="Theme.BubbleNotice.BubbleActivity" parent="@style/Theme.BubbleNotice">

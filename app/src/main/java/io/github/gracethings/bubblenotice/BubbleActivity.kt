@@ -47,7 +47,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -137,7 +136,7 @@ class BubbleActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdgeCompat()
         handleIntent(intent)
 
         setContent {
@@ -222,7 +221,7 @@ class BubbleActivity : ComponentActivity() {
 
                     // 同步消息列表为空或重新填充时的状态。为了保持简单，仅启动时设置，用户可手动切换。 / Sync state when the message list becomes empty or populated. To keep it simple, set it only on launch; the user can switch manually.
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
                         
                         Box(modifier = Modifier.fillMaxSize().padding(bottom = if (showAppSelector) 0.dp else 80.dp)) {
                             if (showAppSelector) {
