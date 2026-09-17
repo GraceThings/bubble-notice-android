@@ -1,0 +1,6 @@
+<ul>
+<li>Add a setting to auto-close bubbles after all notifications are cleared.</li>
+<li>Do not auto-jump when an expanded bubble should stay open for manual selection.</li>
+<li>Close a bubble after its final notification card is processed.</li>
+<li>Keep auto-jump behavior unchanged while a notification is actively displayed.</li>
+</ul>
