@@ -82,4 +82,34 @@
     <string name="about_subtitle_request_translations">GitHub의 Issue에서 앱 번역을 도와주세요</string>
 
     <string name="selector_channels_empty">알림 채널을 찾을 수 없습니다. 새 알림을 받은 후 다시 설정해 주세요.</string>
+    <string name="tab_home">홈</string>
+    <string name="settings_group_appearance_language">모양과 언어</string>
+    <string name="settings_group_about">정보</string>
+    <string name="settings_appearance_title">모양</string>
+    <string name="settings_appearance_subtitle">다크 모드, 다이내믹 컬러, 프리셋</string>
+    <string name="settings_language_title">언어</string>
+    <string name="settings_language_subtitle">언어를 선택하세요</string>
+    <string name="settings_about_title">정보</string>
+    <string name="settings_about_subtitle">버전, 소스 코드, 개인정보</string>
+    <string name="appearance_theme_mode_title">테마 모드</string>
+    <string name="appearance_theme_mode_system">시스템 설정 따르기</string>
+    <string name="appearance_theme_mode_light">라이트</string>
+    <string name="appearance_theme_mode_dark">다크</string>
+    <string name="appearance_dynamic_color_title">다이내믹 컬러</string>
+    <string name="appearance_dynamic_color_subtitle">시스템 색상 소스를 사용합니다</string>
+    <string name="appearance_accent_title">테마 색상</string>
+    <string name="appearance_accent_subtitle">프리셋 Material 색상 선택</string>
+    <string name="appearance_accent_default">기본</string>
+    <string name="appearance_accent_ocean">오션</string>
+    <string name="appearance_accent_forest">포레스트</string>
+    <string name="appearance_accent_sunset">선셋</string>
+    <string name="appearance_accent_plum">플럼</string>
+    <string name="language_system">시스템 설정 따르기</string>
+    <string name="language_english">영어</string>
+    <string name="language_japanese">일본어</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_chinese_simplified">간체 중국어</string>
+    <string name="language_chinese_taiwan">번체 중국어(대만)</string>
+    <string name="language_chinese_hong_kong">번체 중국어(홍콩)</string>
+    <string name="language_chinese_macau">번체 중국어(마카오)</string>
 </resources>

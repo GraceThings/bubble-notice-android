@@ -82,4 +82,34 @@
     <string name="about_subtitle_request_translations">在 GitHub 提交 Issue 幫助我們翻譯應用</string>
 
     <string name="selector_channels_empty">暫未發現通知類別，請在收到該應用的新通知後再來配置。</string>
+    <string name="tab_home">首頁</string>
+    <string name="settings_group_appearance_language">外觀與語言</string>
+    <string name="settings_group_about">關於</string>
+    <string name="settings_appearance_title">外觀</string>
+    <string name="settings_appearance_subtitle">深色模式、動態色彩與預設配色</string>
+    <string name="settings_language_title">語言</string>
+    <string name="settings_language_subtitle">選擇您的語言</string>
+    <string name="settings_about_title">關於</string>
+    <string name="settings_about_subtitle">版本、源碼與隱私</string>
+    <string name="appearance_theme_mode_title">主題模式</string>
+    <string name="appearance_theme_mode_system">跟隨系統</string>
+    <string name="appearance_theme_mode_light">淺色</string>
+    <string name="appearance_theme_mode_dark">深色</string>
+    <string name="appearance_dynamic_color_title">動態色彩</string>
+    <string name="appearance_dynamic_color_subtitle">在可用時使用系統取色</string>
+    <string name="appearance_accent_title">主題色</string>
+    <string name="appearance_accent_subtitle">選擇一套 Material 預設配色</string>
+    <string name="appearance_accent_default">預設</string>
+    <string name="appearance_accent_ocean">海洋</string>
+    <string name="appearance_accent_forest">森林</string>
+    <string name="appearance_accent_sunset">黃昏</string>
+    <string name="appearance_accent_plum">梅子</string>
+    <string name="language_system">跟隨系統</string>
+    <string name="language_english">英語</string>
+    <string name="language_japanese">日語</string>
+    <string name="language_korean">韓語</string>
+    <string name="language_chinese_simplified">簡體中文</string>
+    <string name="language_chinese_taiwan">繁體中文（台灣）</string>
+    <string name="language_chinese_hong_kong">繁體中文（香港）</string>
+    <string name="language_chinese_macau">繁體中文（澳門）</string>
 </resources>

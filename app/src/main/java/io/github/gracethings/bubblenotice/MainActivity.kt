@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,15 +47,26 @@ import androidx.core.app.Person
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.compose.ui.platform.LocalContext
 import io.github.gracethings.bubblenotice.ui.screen.AboutScreen
+import io.github.gracethings.bubblenotice.ui.screen.AppearanceScreen
 import io.github.gracethings.bubblenotice.ui.screen.AppSelectorScreen
+import io.github.gracethings.bubblenotice.ui.screen.HomeScreen
+import io.github.gracethings.bubblenotice.ui.screen.LanguageScreen
 import io.github.gracethings.bubblenotice.ui.screen.SettingsScreen
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
+import io.github.gracethings.bubblenotice.ui.theme.ThemeSettings
 import io.github.gracethings.bubblenotice.util.AppUtils
+import io.github.gracethings.bubblenotice.util.LanguageSettings
 
 class MainActivity : ComponentActivity() {
 
     private val openSelectorFlow = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    // 默认应用当前偏好语言 / Apply the saved language to the root context.
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LanguageSettings.wrap(newBase, LanguageSettings.getSelected(newBase)))
+    }
 
     companion object {
         const val ACTION_SHOW_BUBBLE = "io.github.gracethings.bubblenotice.ACTION_SHOW_BUBBLE"
@@ -132,8 +143,15 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            BubbleNoticeTheme {
-                var currentTab by remember { mutableStateOf("settings") }
+            val context = LocalContext.current
+            var appearance by remember { mutableStateOf(ThemeSettings.getAppearanceState(context)) }
+            BubbleNoticeTheme(
+                themeMode = appearance.themeMode,
+                dynamicColor = appearance.dynamicColor,
+                accent = appearance.accent
+            ) {
+                var currentTab by remember { mutableStateOf("home") }
+                var settingsPane by remember { mutableStateOf("main") }
                 var showSelector by remember { mutableStateOf(false) }
                 val shouldOpenSelector by openSelectorFlow.collectAsState()
 
@@ -141,12 +159,17 @@ class MainActivity : ComponentActivity() {
                     if (shouldOpenSelector) {
                         showSelector = true
                         currentTab = "settings"
+                        settingsPane = "main"
                         openSelectorFlow.value = false
                     }
                 }
 
                 BackHandler(enabled = showSelector) {
                     showSelector = false
+                }
+
+                BackHandler(enabled = currentTab == "settings" && settingsPane != "main") {
+                    settingsPane = "main"
                 }
 
                 Scaffold(
@@ -157,32 +180,33 @@ class MainActivity : ComponentActivity() {
                                 tonalElevation = 0.dp
                             ) {
                                 NavigationBarItem(
+                                    icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
+                                    label = { Text(stringResource(R.string.tab_home)) },
+                                    selected = currentTab == "home",
+                                    onClick = { currentTab = "home"; settingsPane = "main" }
+                                )
+                                NavigationBarItem(
                                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.tab_settings)) },
                                     label = { Text(stringResource(R.string.tab_settings)) },
                                     selected = currentTab == "settings",
                                     onClick = { currentTab = "settings" }
                                 )
-                                NavigationBarItem(
-                                    icon = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
-                                    label = { Text(stringResource(R.string.tab_about)) },
-                                    selected = currentTab == "about",
-                                    onClick = { currentTab = "about" }
-                                )
                             }
                         }
                     }
                 ) { innerPadding ->
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)) {
-
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
                         if (showSelector) {
                             AppSelectorScreen(onBack = { showSelector = false })
                         } else {
                             AnimatedContent(
                                 targetState = currentTab,
                                 transitionSpec = {
-                                    val direction = if (targetState == "about") 1 else -1
+                                    val direction = if (targetState == "settings") 1 else -1
                                     slideInHorizontally(
                                         animationSpec = tween(300),
                                         initialOffsetX = { fullWidth -> direction * fullWidth }
@@ -193,13 +217,36 @@ class MainActivity : ComponentActivity() {
                                 },
                                 label = "TabTransition"
                             ) { tab ->
-                                if (tab == "settings") {
-                                    SettingsScreen(
+                                if (tab == "home") {
+                                    HomeScreen(
                                         onNavigateToSelector = { showSelector = true },
                                         onSendNotification = { sendBubbleNotification(this@MainActivity) }
                                     )
                                 } else {
-                                    AboutScreen()
+                                    when (settingsPane) {
+                                        "appearance" -> AppearanceScreen(
+                                            appearance = appearance,
+                                            onAppearanceChanged = { newState ->
+                                                ThemeSettings.setThemeMode(context, newState.themeMode)
+                                                ThemeSettings.setDynamicColorEnabled(context, newState.dynamicColor)
+                                                ThemeSettings.setAccent(context, newState.accent)
+                                                appearance = newState
+                                            }
+                                        )
+                                        "language" -> LanguageScreen(
+                                            selectedLanguage = LanguageSettings.getSelected(context),
+                                            onLanguageChanged = { language ->
+                                                LanguageSettings.setSelected(context, language)
+                                                LanguageSettings.apply(context, language)
+                                            }
+                                        )
+                                        "about" -> AboutScreen()
+                                        else -> SettingsScreen(
+                                            onNavigateToAppearance = { settingsPane = "appearance" },
+                                            onNavigateToLanguage = { settingsPane = "language" },
+                                            onNavigateToAbout = { settingsPane = "about" }
+                                        )
+                                    }
                                 }
                             }
                         }

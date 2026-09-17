@@ -82,4 +82,34 @@
     <string name="about_subtitle_request_translations">Help translate the app to your language on GitHub</string>
 
     <string name="selector_channels_empty">No channels found yet. Wait for a notification to arrive to configure its category.</string>
+    <string name="tab_home">Home</string>
+    <string name="settings_group_appearance_language">Appearance &amp; Language</string>
+    <string name="settings_group_about">About</string>
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="settings_appearance_subtitle">Dark mode, dynamic color and presets</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_subtitle">Choose your language</string>
+    <string name="settings_about_title">About</string>
+    <string name="settings_about_subtitle">Version, source code and privacy</string>
+    <string name="appearance_theme_mode_title">Theme Mode</string>
+    <string name="appearance_theme_mode_system">Follow System</string>
+    <string name="appearance_theme_mode_light">Light</string>
+    <string name="appearance_theme_mode_dark">Dark</string>
+    <string name="appearance_dynamic_color_title">Dynamic Color</string>
+    <string name="appearance_dynamic_color_subtitle">Use the system color source when available</string>
+    <string name="appearance_accent_title">Theme Color</string>
+    <string name="appearance_accent_subtitle">Pick a preset Material palette</string>
+    <string name="appearance_accent_default">Default</string>
+    <string name="appearance_accent_ocean">Ocean</string>
+    <string name="appearance_accent_forest">Forest</string>
+    <string name="appearance_accent_sunset">Sunset</string>
+    <string name="appearance_accent_plum">Plum</string>
+    <string name="language_system">Follow System</string>
+    <string name="language_english">English</string>
+    <string name="language_japanese">Japanese</string>
+    <string name="language_korean">Korean</string>
+    <string name="language_chinese_simplified">Simplified Chinese</string>
+    <string name="language_chinese_taiwan">Traditional Chinese (Taiwan)</string>
+    <string name="language_chinese_hong_kong">Traditional Chinese (Hong Kong)</string>
+    <string name="language_chinese_macau">Traditional Chinese (Macau)</string>
 </resources>

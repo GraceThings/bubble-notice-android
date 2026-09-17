@@ -82,4 +82,34 @@
     <string name="about_subtitle_request_translations">GitHubのIssueで翻訳に協力してください</string>
 
     <string name="selector_channels_empty">まだ通知カテゴリが見つかりません。通知を受信してから設定してください。</string>
+    <string name="tab_home">ホーム</string>
+    <string name="settings_group_appearance_language">外観と言語</string>
+    <string name="settings_group_about">情報</string>
+    <string name="settings_appearance_title">外観</string>
+    <string name="settings_appearance_subtitle">ダークモード、ダイナミックカラー、プリセット</string>
+    <string name="settings_language_title">言語</string>
+    <string name="settings_language_subtitle">言語を選択してください</string>
+    <string name="settings_about_title">情報</string>
+    <string name="settings_about_subtitle">バージョン、ソースコード、プライバシー</string>
+    <string name="appearance_theme_mode_title">テーマモード</string>
+    <string name="appearance_theme_mode_system">システムに従う</string>
+    <string name="appearance_theme_mode_light">ライト</string>
+    <string name="appearance_theme_mode_dark">ダーク</string>
+    <string name="appearance_dynamic_color_title">ダイナミックカラー</string>
+    <string name="appearance_dynamic_color_subtitle">利用できる場合はシステムの配色を使用します</string>
+    <string name="appearance_accent_title">テーマカラー</string>
+    <string name="appearance_accent_subtitle">プリセットの Material パレットを選択</string>
+    <string name="appearance_accent_default">既定</string>
+    <string name="appearance_accent_ocean">オーシャン</string>
+    <string name="appearance_accent_forest">フォレスト</string>
+    <string name="appearance_accent_sunset">サンセット</string>
+    <string name="appearance_accent_plum">プラム</string>
+    <string name="language_system">システムに従う</string>
+    <string name="language_english">英語</string>
+    <string name="language_japanese">日本語</string>
+    <string name="language_korean">韓国語</string>
+    <string name="language_chinese_simplified">簡体字中国語</string>
+    <string name="language_chinese_taiwan">繁体字中国語（台湾）</string>
+    <string name="language_chinese_hong_kong">繁体字中国語（香港）</string>
+    <string name="language_chinese_macau">繁体字中国語（マカオ）</string>
 </resources>

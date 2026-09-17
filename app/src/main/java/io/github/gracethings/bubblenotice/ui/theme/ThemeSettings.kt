@@ -23,6 +23,13 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 enum class ThemeAccent { DEFAULT, OCEAN, FOREST, SUNSET, PLUM }
 
+// Snapshot of appearance preferences used by the app theme and settings previews.
+data class AppearanceState(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColor: Boolean = true,
+    val accent: ThemeAccent = ThemeAccent.DEFAULT
+)
+
 // Keep the app's visual settings grouped together so both appearance preview and theme can use them.
 object ThemeSettings {
     private const val PREFS_NAME = "bubble_prefs"
@@ -62,6 +69,14 @@ object ThemeSettings {
     fun setAccent(context: Context, accent: ThemeAccent) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit().putString(KEY_ACCENT, accent.name).apply()
+    }
+
+    fun getAppearanceState(context: Context): AppearanceState {
+        return AppearanceState(
+            themeMode = getThemeMode(context),
+            dynamicColor = isDynamicColorEnabled(context),
+            accent = getAccent(context)
+        )
     }
 }
 
