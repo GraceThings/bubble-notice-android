@@ -113,9 +113,9 @@ fun AboutScreen() {
     var showClearCacheDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(300) // Wait for page transition
+        delay(300) // 等待页面转场 / Wait for the page transition
         isIconVisible = true
-        delay(150) // Wait for icon to start popping up before showing flyout
+        delay(150) // 等待图标开始弹出后再显示浮层 / Wait for the icon to start popping up before showing the flyout
         isFlyoutVisible = true
     }
 
@@ -207,7 +207,7 @@ fun AboutScreen() {
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // App Round Icon
+            // 应用圆形图标 / App round icon
             if (iconScale > 0f) {
                 Box(
                     modifier = Modifier
@@ -233,7 +233,7 @@ fun AboutScreen() {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Bubble Notification Flyout
+            // Bubble Notice 浮层 / Bubble Notice flyout
             if (flyoutAlpha > 0f) {
                 Card(
                     shape = RoundedCornerShape(

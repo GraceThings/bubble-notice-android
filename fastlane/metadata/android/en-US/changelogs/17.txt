@@ -1,7 +1,6 @@
 <ul>
-<li>Add "Separate App Bubbles" showing an independent bubble for each subscribed app.</li>
-<li>Close older unhandled bubbles to respect Android's bubble limit during notification bursts.</li>
-<li>Show only the selected app's unread messages when a per-app bubble is expanded.</li>
-<li>Fix the transparent expanded bubble window that could not be dismissed on some devices.</li>
-<li>Complete missing Japanese, Korean, and Traditional Chinese translations.</li>
+<li>Add a setting to auto-close bubbles after all notifications are cleared.</li>
+<li>Do not auto-jump when an expanded bubble should stay open for manual selection.</li>
+<li>Close a bubble after its final notification card is processed.</li>
+<li>Keep auto-jump behavior unchanged while a notification is actively displayed.</li>
 </ul>

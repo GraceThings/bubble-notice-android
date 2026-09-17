@@ -54,11 +54,11 @@ tasks.withType<JavaCompile> {
         buildConfig = true
     }
 
-    // for f-droid packaging
+    // 用于 F-Droid 打包 / For F-Droid packaging
     dependenciesInfo {
-        // Disables dependency metadata when building APKs.
+        // 构建 APK 时禁用依赖元数据 / Disable dependency metadata when building APKs.
         includeInApk = false
-        // Disables dependency metadata when building Android App Bundles.
+        // 构建 Android App Bundle 时禁用依赖元数据 / Disable dependency metadata when building Android App Bundles.
         includeInBundle = false
     }
 }

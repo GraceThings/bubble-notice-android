@@ -10,8 +10,8 @@ import java.util.Locale
 
 object AppLogger {
     private var logDir: File? = null
-    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 5MB limit
-    private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+    private const val MAX_LOG_SIZE = 5 * 1024 * 1024L // 上限 5MB / 5MB limit
+    private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 保留 7 天 / 7-day retention
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
     private val fileDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
@@ -24,13 +24,13 @@ object AppLogger {
         val dir = logDir ?: return
         val threshold = System.currentTimeMillis() - MAX_AGE_MS
         
-        // Clean legacy file if exists
+        // 如果存在旧版文件则清理 / Clean the legacy file if it exists
         val legacyFile = File(dir, "app_logs.txt")
         if (legacyFile.exists()) {
             legacyFile.delete()
         }
 
-        // Clean old daily files
+        // 清理过期的每日日志文件 / Clean expired daily log files
         val files = dir.listFiles { _, name -> name.startsWith("app_logs_") && name.endsWith(".txt") }
         files?.forEach { file ->
             if (file.lastModified() < threshold) {

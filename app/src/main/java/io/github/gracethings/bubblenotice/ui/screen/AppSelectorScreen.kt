@@ -74,7 +74,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(!isPreview) }
     
     var searchQuery by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Personal, 1 = Work (0 = 个人，1 = 工作)
+    var selectedTab by remember { mutableStateOf(0) } // 0 = 个人，1 = 工作 / 0 = Personal, 1 = Work
 
     LaunchedEffect(Unit) {
         if (!isPreview) {
@@ -84,7 +84,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             initialSelectedPackages = currentSelected
             isLoading = false
         } else {
-            // Preview data (预览数据)
+            // 预览数据 / Preview data
             appList = listOf(
                 AppItem("Settings", "com.android.settings", ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!, false),
                 AppItem("Work App", "com.work.app", ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!, true)
@@ -95,7 +95,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
 
     val hasWorkApps = remember(appList) { appList.any { it.isWorkProfile } }
     
-    // Filter by tab and search (通过标签页和搜索进行过滤)
+    // 按标签页和搜索过滤 / Filter by tab and search
     val displayedApps = remember(appList, initialSelectedPackages, selectedTab, searchQuery, hasWorkApps) {
         val filtered = appList.filter { app ->
             val matchTab = if (!hasWorkApps) true else {
@@ -107,19 +107,19 @@ fun AppSelectorScreen(onBack: () -> Unit) {
         
         val (selected, unselected) = filtered.partition { initialSelectedPackages.contains(it.id) }
         
-        // Sort alphabetically (按字母顺序排序)
+        // 按字母顺序排序 / Sort alphabetically
         val sortedSelected = selected.sortedBy { it.name }
         val sortedUnselected = unselected.sortedBy { it.name }
         
         sortedSelected + sortedUnselected
     }
 
-    // Alphabet index mapping (字母索引映射)
+    // 字母索引映射 / Alphabet index mapping
     val alphabetMap = remember(displayedApps) {
         val map = mutableMapOf<String, Int>()
         displayedApps.forEachIndexed { index, app ->
             val firstChar = app.name.firstOrNull()?.uppercase() ?: "#"
-            // If it's not A-Z, map to # (如果不是A-Z，则映射到 #)
+            // 非 A-Z 字符映射到 # / If not A-Z, map to #
             val key = if (firstChar.matches(Regex("[A-Z]"))) firstChar else "#"
             if (!map.containsKey(key)) {
                 map[key] = index
@@ -133,7 +133,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
     val expandedApps = remember { mutableStateListOf<String>() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top Bar (顶部栏)
+        // 顶部栏 / Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,7 +157,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             }
         }
 
-        // Search Bar (搜索栏)
+        // 搜索栏 / Search bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -184,7 +184,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
             )
         )
 
-        // Tabs (标签页)
+        // 标签页 / Tabs
         if (hasWorkApps) {
             Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
                 ButtonGroup(
@@ -276,7 +276,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                             ) {
                                 var disabledChannels by remember { mutableStateOf<Set<String>>(emptySet()) }
                                 
-                                // data class internally mapped to channel ID and Name
+                                // 内部以 data class 映射为渠道 ID 与名称 / Internally mapped to channel ID and name by the data class
                                 var displayChannels by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
                                 
                                 LaunchedEffect(app.id) {
@@ -292,7 +292,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                                                     throw SecurityException("Null returned from getNotificationChannels")
                                                 }
                                             } catch (e: SecurityException) {
-                                                // Fallback to known channels if we lack privileges
+                                                // 缺少权限时回退到已知渠道 / Fallback to known channels when the privilege is unavailable
                                                 val knownIds = AppUtils.getKnownChannels(context, app.id)
                                                 displayChannels = knownIds.map { Pair(it, it) }.distinctBy { it.first }
                                             }
@@ -354,7 +354,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                     }
                 }
 
-                // Alphabet scroll bar (字母滚动条)
+                // 字母滚动条 / Alphabet scroll bar
                 var dragActive by remember { mutableStateOf(false) }
                 var currentDragChar by remember { mutableStateOf<String?>(null) }
                 var currentDragY by remember { mutableStateOf(0f) }
@@ -427,7 +427,7 @@ fun AppSelectorScreen(onBack: () -> Unit) {
                         }
                     }
 
-                    // The floating indicator (浮动指示器)
+                    // 浮动指示器 / Floating indicator
                     if (dragActive && currentDragChar != null) {
                         Box(
                             modifier = Modifier

@@ -54,8 +54,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         private const val MAIN_BUBBLE_NOTIFICATION_ID = 1001
         private const val PER_APP_BUBBLE_NOTIFICATION_ID_BASE = 20000
         private const val PER_APP_BUBBLE_NOTIFICATION_ID_RANGE = 8000
-        // Android does not expose the exact bubble stack limit. Most Android builds allow
-        // around five bubble slots, so this is a conservative best-effort budget.
+        // Android 没有暴露确切的气泡栈上限；多数系统允许约五个气泡，因此这里采用保守的尽力而为预算。 / Android does not expose the exact bubble stack limit. Most Android builds allow about five bubble slots, so this is a conservative best-effort budget.
         private const val TOTAL_BUBBLE_BUDGET = 5
         private const val RESERVED_BUBBLE_SLOTS_FOR_OTHER_APPS = 1
         private const val MIN_PER_APP_BUBBLES = 0
@@ -81,8 +80,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-        // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡
-        // Store last bubble notification data for suppressing shade while keeping bubble
+        // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡。 / Store the last bubble notification data for suppressing the shade while keeping the bubble alive.
         private var lastBubbleIntent: PendingIntent? = null
         private var lastBubbleIcon: IconCompat? = null
         private var lastBuilder: NotificationCompat.Builder? = null
@@ -93,10 +91,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             val builder: NotificationCompat.Builder
         )
 
-        /**
-         * 仅隐藏通知栏中的通知，保留气泡
-         * Suppress the notification from the shade while keeping the bubble alive.
-         */
+        /** 仅隐藏通知栏中的通知，保留气泡。 / Suppress the notification from the shade while keeping the bubble alive. */
         fun suppressNotificationInShade(context: android.content.Context, packageId: String? = null) {
             if (packageId != null && AppUtils.isPerAppBubblesEnabled(context)) {
                 val snapshot = synchronized(perAppStateLock) {
@@ -220,12 +215,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             return true
         }
 
-        /**
-         * Close the bubble after its expanded activity has been finished. This
-         * avoids cancelling the notification while SystemUI still owns the
-         * bubble surface, which can leave a stale/transparent window on
-         * some devices.
-         */
+        /** 在展开的 Activity 结束后再关闭气泡，避免 SystemUI 仍持有气泡表面时取消通知，从而在某些设备上留下卡住或透明的窗口。 / Close the bubble after its expanded activity has finished. This avoids cancelling the notification while SystemUI still owns the bubble surface, which can leave a stale or transparent window on some devices. */
         fun closeAfterActivityCleared(
             context: Context,
             packageFilter: String?
@@ -292,10 +282,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
         }
 
-        /**
-         * Close one app bubble when that app has no unread cards. Unlike
-         * autoCloseBubbleIfEmpty, this never clears unrelated per-app bubbles.
-         */
+        /** 当应用没有未读卡片时关闭单个应用气泡；与 autoCloseBubbleIfEmpty 不同，这里不会清除无关的独立应用气泡。 / Close one app bubble when that app has no unread cards. Unlike autoCloseBubbleIfEmpty, this never clears unrelated per-app bubbles. */
         fun clearPerAppBubbleIfEmpty(context: android.content.Context, pkgId: String): Boolean {
             if (!AppUtils.isPerAppBubblesEnabled(context)) return false
             if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
@@ -343,17 +330,13 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             return
         }
 
-        // 跳过全屏通知（来电、闹钟、计时器等），避免黑屏/卡死
-        // Skip full-screen notifications (calls, alarms, timers) to prevent black screen bugs.
+        // 跳过全屏通知（如来电、闹钟、计时器），避免黑屏或卡死。 / Skip full-screen notifications such as calls, alarms, and timers to prevent black screens or freezes.
         if (notification.fullScreenIntent != null) {
             AppLogger.d("BubbleService", "Skipped full-screen notification from: ${sbn.packageName}")
             return
         }
 
-        // 跳过通话类通知（语音/视频来电等），部分应用（如微信）不使用 fullScreenIntent，
-        // 但会设置 CATEGORY_CALL。接管此类通知会导致 SystemUI 气泡渲染管线污染。
-        // Skip call-category notifications. Some apps (e.g. WeChat) don't use fullScreenIntent
-        // but do set CATEGORY_CALL. Intercepting these corrupts the SystemUI bubble pipeline.
+        // 跳过通话类通知（如语音或视频来电）；部分应用不使用 fullScreenIntent，但会设置 CATEGORY_CALL，接管可能导致 SystemUI 气泡渲染管线污染。 / Skip call-category notifications such as voice or video calls. Some apps do not use a fullScreenIntent but do set CATEGORY_CALL; intercepting these can corrupt the SystemUI bubble pipeline.
         if (notification.category == Notification.CATEGORY_CALL ||
             notification.category == Notification.CATEGORY_MISSED_CALL) {
             AppLogger.d("BubbleService", "Skipped call notification from: ${sbn.packageName} (category=${notification.category})")
@@ -399,7 +382,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val styleTime = lastStyleMessage?.timestamp ?: 0L
                 val messageCount = messagingStyle?.messages?.size ?: -1
                 
-                // Extract full text if MessagingStyle exists to mimic native stacked notifications (如果存在 MessagingStyle，则提取全文以模仿原生的堆叠通知)
+                // 如果存在 MessagingStyle，则提取全文以模仿原生堆叠通知。 / Extract the full text when MessagingStyle exists to mimic native stacked notifications.
                 if (messagingStyle != null && messagingStyle.messages.isNotEmpty()) {
                     text = messagingStyle.messages.joinToString("\n") { it.text ?: "" }
                 }
@@ -423,7 +406,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val originalIntent = notification.contentIntent
                 val originalSmallIcon = notification.smallIcon
                 
-                // Extract avatar (largeIcon) or MessagingStyle person icon (提取头像 (largeIcon) 或 MessagingStyle 个人图标)
+                // 提取头像（largeIcon）或 MessagingStyle 人物图标。 / Extract the largeIcon or the MessagingStyle person icon.
                 var originalLargeIcon = notification.getLargeIcon()
                 if (originalLargeIcon == null) {
                     lastStyleMessage?.person?.icon?.let { iconCompat ->
@@ -574,7 +557,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
         paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
         
-        // Center crop
+        // 居中裁剪 / Center crop.
         val srcRect = android.graphics.Rect(
             (bitmap.width - size) / 2,
             (bitmap.height - size) / 2,
@@ -610,7 +593,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             try {
                 createCircularIcon(this, originalLargeIcon)
             } catch (e: Exception) {
-                // Fallback to app icon if conversion fails (如果转换失败，则回退到应用图标)
+                // 转换失败时回退到应用图标 / Fall back to the app icon when conversion fails.
                 val appIconDrawable = try {
                     packageManager.getApplicationIcon(pkg)
                 } catch (ex: Exception) {
@@ -650,7 +633,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
 
         val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
             .setDesiredHeight(600)
-            .setAutoExpandBubble(false) // 默认不强行弹?/ Let Android decide when to expand.
+            .setAutoExpandBubble(false) // 不强制自动展开气泡 / Do not force the bubble to expand automatically.
             .setSuppressNotification(false) // 确保不抑制通知显示 / Ensure notification is not suppressed.
             .build()
 
@@ -671,7 +654,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         val style = NotificationCompat.MessagingStyle(chatPartner)
             .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
 
-        // "打开应用" 快捷操作意图 / "Open App" action intent: handled without a transparent Activity.
+        // “打开应用”快捷操作意图，不通过透明 Activity 处理。 / "Open App" action intent, handled without a transparent Activity.
         val openAppIntent = Intent(this, NotificationActionReceiver::class.java).apply {
             action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
             putExtra("EXTRA_PACKAGE_NAME", pkgId)
@@ -698,8 +681,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
         }
 
-        // 通知体点击意图 / Notification body tap: open bubble normally (same as tapping the bubble icon)
-        // 不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈
+        // 通知主体点击意图：正常打开气泡，与点击气泡图标一致；不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈。 / Notification body tap intent: open the bubble normally, the same as tapping the bubble icon. Do not use ACTION_LAUNCH_APP to avoid polluting the bubble task stack.
         val contentIntent = PendingIntent.getActivity(
             this, if (filterByPackage) pkgId.hashCode() else 0,
             Intent(this, BubbleActivity::class.java).apply {
@@ -721,7 +703,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             .addPerson(chatPartner)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
-            .setOnlyAlertOnce(isUpdate) // 更新时静?/ Quietly update repeated messages.
+            .setOnlyAlertOnce(isUpdate) // 更新时保持静默 / Quietly update repeated messages.
             .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
 
         actions.forEach { nativeAction ->
@@ -756,12 +738,11 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             lastBuilder != null
         }
         if (!isUpdate && hasExistingNotification) {
-            // 如果未开启免打扰，且是新消息，则先取消旧通知以强制触发横幅弹�?/ Force heads-up by canceling the old notification
+            // 如果未开启免打扰且是新消息，先取消旧通知以强制触发横幅弹出。 / Force heads-up by cancelling the old notification when DND is off and this is a new message.
             cancelOwnNotification(this, notificationId)
         }
 
-        // 保存气泡数据，以便后续调用 suppressNotificationInShade
-        // Save bubble data for later suppression
+        // 保存气泡数据，以便后续调用 suppressNotificationInShade。 / Save the bubble data for later suppression by suppressNotificationInShade.
         if (storeAsPerApp) {
             perAppBubbleData[pkgId] = BubbleState(bubbleIntent, icon, builder)
         } else {

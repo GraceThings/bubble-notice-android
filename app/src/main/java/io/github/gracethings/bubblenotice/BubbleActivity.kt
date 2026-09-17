@@ -161,6 +161,18 @@ class BubbleActivity : ComponentActivity() {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.suppressNotificationInShade(this@BubbleActivity, packageFilter.value)
                                 selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
+
+                                val expandedPackageId = packageFilter.value
+                                val expandedIsEmpty = expandedPackageId != null &&
+                                    !UnreadMessageManager.hasMessagesForPackage(expandedPackageId)
+                                if (expandedIsEmpty &&
+                                    AppUtils.isCloseBubbleAfterClearEnabled(this@BubbleActivity)
+                                ) {
+                                    io.github.gracethings.bubblenotice.service
+                                        .BubbleNotificationListenerService
+                                        .closeAfterActivityCleared(this@BubbleActivity, expandedPackageId)
+                                    this@BubbleActivity.finish()
+                                }
                                 
                                 val pendingData = AppUtils.consumePendingAutoJump(packageFilter.value)
                                 if (pendingData != null) {
@@ -208,8 +220,7 @@ class BubbleActivity : ComponentActivity() {
                         }
                     }
 
-                    // Sync state if messages list becomes empty/populated? (如果消息列表为空/填满，同步状态？) 
-                    // To keep it simple, we only set it on launch. User can switch manually. (为了保持简单，我们仅在启动时设置。用户可以手动切换。)
+                    // 同步消息列表为空或重新填充时的状态。为了保持简单，仅启动时设置，用户可手动切换。 / Sync state when the message list becomes empty or populated. To keep it simple, set it only on launch; the user can switch manually.
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         
@@ -240,7 +251,7 @@ class BubbleActivity : ComponentActivity() {
                             }
                         }
 
-                        // Bottom Navigation and FAB using standard HorizontalFloatingToolbar (使用标准 HorizontalFloatingToolbar 的底部导航和 FAB)
+                        // 使用标准 HorizontalFloatingToolbar 的底部导航和悬浮按钮 / Bottom navigation and FAB using the standard HorizontalFloatingToolbar.
                         if (!showAppSelector) {
                             @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
                             androidx.compose.material3.HorizontalFloatingToolbar(
@@ -261,7 +272,7 @@ class BubbleActivity : ComponentActivity() {
 
                                                       for (key in snapshotKeys) {
                                                           UnreadMessageManager.clearMessagesForSender(key.first, key.second)
-                                                          kotlinx.coroutines.delay(150) // 80ms for a smoother ripple effect (80毫秒以获得更平滑的涟漪效果)
+                                                          kotlinx.coroutines.delay(150) // 使用 150ms 让涟漪效果更平滑 / Use 150ms for a smoother ripple effect.
                                                       }
 
                                                       closeBubbleIfEmptyAfterActivity(context, packageFilterValue)
@@ -299,7 +310,7 @@ class BubbleActivity : ComponentActivity() {
                                     )
                                 }
                             }
-                        } // end if (!showAppSelector) (结束 if (!showAppSelector))
+                        } // 结束 if (!showAppSelector) / End if (!showAppSelector)
 
                     }
                 }
@@ -424,7 +435,7 @@ class BubbleActivity : ComponentActivity() {
             } else {
                 LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(2.dp) // M3e minimal gap (M3e 最小间距)
+                verticalArrangement = Arrangement.spacedBy(2.dp) // M3e 最小间距 / M3e minimal gap.
             ) {
                 itemsIndexed(grouped, key = { _, group -> group.packageName + group.senderName }) { index, group ->
                     val isFirst = index == 0
@@ -449,7 +460,7 @@ class BubbleActivity : ComponentActivity() {
                     )
                 }
             }
-            } // end else (结束 else)
+            } // 结束 else / End else
         }
     }
 
@@ -472,7 +483,7 @@ class BubbleActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .clip(shape)
         ) {
-            // Background Action (Delete) (后台操作 (删除))
+            // 背景删除操作 / Background action (Delete).
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -495,7 +506,7 @@ class BubbleActivity : ComponentActivity() {
                 )
             }
 
-            // Foreground Content (前台内容)
+            // 前台内容 / Foreground content.
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -525,7 +536,15 @@ class BubbleActivity : ComponentActivity() {
                             }
                         )
                     }
-                    .clickable {
+                   .clickable {
+                        val remainingCards = if (packageFilter.value == null) {
+                            UnreadMessageManager.messagesFlow.value
+                        } else {
+                            UnreadMessageManager.messagesFlow.value.filter {
+                                it.packageName == packageFilter.value
+                            }
+                        }
+                        val shouldCloseWholeBubble = remainingCards.size == 1
                         val pendingIntent = group.messages.firstOrNull()?.contentIntent
                         val sentOriginalIntent = sendNotificationTargetIntent(
                             context,
@@ -542,8 +561,14 @@ class BubbleActivity : ComponentActivity() {
                             closeBubbleIfEmptyAfterLaunch(
                                 context,
                                 packageFilter.value,
-                                if (launched) 400L else 150L
+                                if (shouldCloseWholeBubble) 0L else if (launched) 400L else 150L
                             )
+                            if (shouldCloseWholeBubble) {
+                                kotlinx.coroutines.delay(100L)
+                                io.github.gracethings.bubblenotice.service
+                                    .BubbleNotificationListenerService
+                                    .closeAfterActivityCleared(context, packageFilter.value)
+                            }
                         }
                     },
                 shape = shape,
@@ -559,7 +584,7 @@ class BubbleActivity : ComponentActivity() {
                         )
                         .padding(14.dp)
                 ) {
-                    // Sender details header (发送者详细信息标题)
+                    // 发送者详情标题 / Sender details header.
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -604,7 +629,7 @@ class BubbleActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Message Bubbles (消息气泡)
+                    // 消息气泡 / Message bubbles.
                     Column(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()

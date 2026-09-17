@@ -228,7 +228,7 @@ class MainActivity : ComponentActivity() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.deleteNotificationChannel("bubble_popup_channel")
 
-        // 1. Silent Channel (1. 静音频道)
+        // 静音通知渠道 / Silent notification channel.
         val silentChannel = NotificationChannel(
             AppUtils.BUBBLE_CHANNEL_SILENT_ID,
             getString(R.string.notif_channel_name_silent),
@@ -240,7 +240,7 @@ class MainActivity : ComponentActivity() {
         }
         nm.createNotificationChannel(silentChannel)
 
-        // 2. Alert Channel (2. 提醒频道)
+        // 提醒通知渠道 / Alert notification channel.
         val alertChannel = NotificationChannel(
             AppUtils.BUBBLE_CHANNEL_ALERT_ID,
             getString(R.string.notif_channel_name_alert),

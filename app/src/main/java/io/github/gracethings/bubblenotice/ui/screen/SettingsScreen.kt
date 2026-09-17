@@ -108,7 +108,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
             .padding(bottom = 24.dp),
-        // removed verticalArrangement = Arrangement.spacedBy(12.dp) to use our custom groups (移除了 verticalArrangement = Arrangement.spacedBy(12.dp) 以使用我们的自定义分组)
+        // 移除默认垂直间距，改用自定义分组 / Removed default vertical spacing to use custom groups
     ) {
         Row(
             modifier = Modifier
@@ -118,13 +118,13 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
         ) {
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge, // changed to headlineLarge to match about screen title (已更改为 headlineLarge 以匹配关于屏幕的标题)
+                style = MaterialTheme.typography.headlineLarge, // 设置为 headlineLarge，与关于页标题一致 / Set to headlineLarge to match the About screen title
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 16.dp)
             )
         }
 
-        // 常规 (General) Group
+        // 常规分组 / General group
         Text(
             text = stringResource(R.string.setting_group_general),
             style = MaterialTheme.typography.titleSmall,
@@ -161,7 +161,7 @@ fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> U
             )
         }
 
-        // 个性化 (Personalization) Group
+        // 个性化分组 / Personalization group
         Text(
             text = stringResource(R.string.setting_group_personalization),
             style = MaterialTheme.typography.titleSmall,

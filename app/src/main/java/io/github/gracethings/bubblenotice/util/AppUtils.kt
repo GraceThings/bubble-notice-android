@@ -65,33 +65,33 @@ object AppUtils {
         prefs.edit().putBoolean(KEY_PIN_TUTORIAL_SHOWN, true).apply()
     }
 
-    // 读取已置顶应用包名
+    // 读取已置顶应用包名 / Read pinned package names.
     fun getPinnedApps(context: Context): Set<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val raw = prefs.getStringSet(KEY_PINNED_APPS, emptySet()) ?: emptySet()
         return raw.map { if (it.contains(":")) it else "$it:0" }.toSet()
     }
 
-    // 保存已置顶应用包名
+    // 保存已置顶应用包名 / Save pinned package names.
     fun savePinnedApps(context: Context, packages: Set<String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putStringSet(KEY_PINNED_APPS, packages).apply()
     }
 
-        // 读取已选应用包?/ Read saved selected package names.
+        // 读取已选应用包名 / Read saved selected package names.
     fun getSelectedApps(context: Context): Set<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val raw = prefs.getStringSet(KEY_SELECTED_APPS, emptySet()) ?: emptySet()
         return raw.map { if (it.contains(":")) it else "$it:0" }.toSet()
     }
 
-    // 保存已选应用包?/ Save package names selected by the user.
+    // 保存已选应用包名 / Save package names selected by the user.
     fun saveSelectedApps(context: Context, packages: Set<String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putStringSet(KEY_SELECTED_APPS, packages).apply()
     }
 
-    // 记录已知的通知渠道（作为无权直接查询时的回退方案） / Record known notification channels
+    // 记录已知的通知渠道，作为无权直接查询时的回退方案 / Record known notification channels as a fallback when direct lookup is unavailable.
     fun addKnownChannel(context: Context, pkgId: String, channelId: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val key = "known_channels_$pkgId"
@@ -125,7 +125,7 @@ object AppUtils {
         prefs.edit().putStringSet(key, currentSet).apply()
     }
 
-    // 异步加载桌面可启动应?/ Asynchronously load launcher apps.
+    // 异步加载桌面可启动应用 / Asynchronously load launcher apps.
     suspend fun loadInstalledApps(context: Context): List<AppItem> = withContext(Dispatchers.IO) {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -149,7 +149,7 @@ object AppUtils {
         apps.distinctBy { it.packageName + "_" + it.isWorkProfile }.sortedBy { it.name }
     }
 
-    // 提取 UserHandle 辅助方法 / Extract UserHandle helper
+    // 提取 UserHandle 辅助方法 / Extract UserHandle helper.
     fun getUserHandle(context: Context, isWork: Boolean): android.os.UserHandle {
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
         return userManager.userProfiles.firstOrNull { profile ->
@@ -158,7 +158,7 @@ object AppUtils {
         } ?: android.os.Process.myUserHandle()
     }
 
-    // 按包名获取应用名?/ Get app name by package name.
+    // 按包名获取应用名 / Get app name by package name.
     fun getAppName(context: Context, packageName: String): String {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -185,7 +185,7 @@ object AppUtils {
         }
     }
 
-    // 按包名获取应用图?Bitmap / Get app icon bitmap by package name.
+    // 按包名获取应用图标位图 / Get app icon bitmap by package name.
     fun getAppIconBitmap(context: Context, packageName: String): android.graphics.Bitmap? {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -235,8 +235,7 @@ object AppUtils {
             )
         }
 
-        // LauncherApps is less affected by background-activity-start restrictions and
-        // brings an existing task to the foreground instead of creating a detached task.
+        // LauncherApps 受后台启动限制影响较小，并且会把现有任务带到前台，而不是创建独立任务。 / LauncherApps is less affected by background-activity-start restrictions and brings an existing task to the foreground instead of creating a detached task.
         try {
             val activities = launcherApps.getActivityList(pkg, targetProfile)
             for (activity in activities) {
@@ -265,8 +264,7 @@ object AppUtils {
             e.printStackTrace()
         }
 
-        // Fall back for launchers that do not expose a launchable activity through
-        // LauncherApps but still provide a PackageManager launch intent.
+        // 对于没有通过 LauncherApps 暴露可启动 Activity、但仍有 PackageManager 启动意图的应用，使用回退方案。 / Fall back for launchers that do not expose a launchable activity through LauncherApps but still provide a PackageManager launch intent.
         if (!isWork) {
             try {
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
@@ -312,8 +310,7 @@ object AppUtils {
     }
 
     /**
-     * 返回 Triple(PendingIntent, pkgId, senderName)
-     * Returns Triple(PendingIntent, pkgId, senderName)
+     * 返回 Triple(PendingIntent, pkgId, senderName) / Return Triple(PendingIntent, pkgId, senderName).
      */
     @Synchronized
     fun consumePendingAutoJump(requestedPkgId: String? = null): Triple<android.app.PendingIntent, String?, String?>? {
@@ -343,7 +340,7 @@ object AppUtils {
         )
     }
 
-    // 安全地触发 PendingIntent，并显式授予后台启动权限 (兼容 Android 14+)
+    // 安全地触发 PendingIntent，并显式授予后台启动权限，兼容 Android 14+ / Safely send a PendingIntent and explicitly allow background activity launch, compatible with Android 14+.
     fun sendPendingIntentAllowed(context: Context, pendingIntent: android.app.PendingIntent): Boolean {
         val options = android.app.ActivityOptions.makeBasic()
         if (android.os.Build.VERSION.SDK_INT >= 34) {
@@ -400,9 +397,7 @@ object AppUtils {
     }
 
     /**
-     * Launch the original notification's content intent, falling back to the
-     * app's launcher activity. Used both from BubbleActivity and from the
-     * notification listener where background PendingIntent launch is required.
+     * 启动原通知的内容 Intent，失败时回退到应用的启动 Activity。 / Launch the original notification's content intent, falling back to the app's launcher activity.
      */
     suspend fun openNotificationTarget(
         context: Context,
@@ -501,7 +496,7 @@ object AppUtils {
         }
     }
 
-    // 加载已选应?/ Load only selected apps.
+    // 加载已选应用 / Load only selected apps.
     suspend fun loadSelectedAppsOnly(context: Context, identifiers: Set<String>): List<AppItem> = withContext(Dispatchers.IO) {
         val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as android.content.pm.LauncherApps
         val userManager = context.getSystemService(Context.USER_SERVICE) as android.os.UserManager
@@ -541,73 +536,73 @@ object AppUtils {
         result.sortedBy { it.name }
     }
 
-    // 读取自动跳转开?/ Read the auto jump toggle.
+    // 读取自动跳转开关 / Read the auto jump toggle.
     fun isAutoJumpEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_AUTO_JUMP, false)
     }
 
-    // 保存自动跳转开?/ Save the auto jump toggle.
+    // 保存自动跳转开关 / Save the auto jump toggle.
     fun setAutoJumpEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_AUTO_JUMP, enabled) }
     }
 
-    // 读取“为每个订阅应用弹出独立气泡”开关。
+    // 读取“为每个订阅应用弹出独立气泡”开关 / Read the separate app bubbles toggle.
     fun isPerAppBubblesEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_PER_APP_BUBBLES, false)
     }
 
-    // 保存“为每个订阅应用弹出独立气泡”开关。
+    // 保存“为每个订阅应用弹出独立气泡”开关 / Save the separate app bubbles toggle.
     fun setPerAppBubblesEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_PER_APP_BUBBLES, enabled) }
     }
 
-    // 读取“清除后关闭气泡”开关。
+    // 读取“清除后关闭气泡”开关 / Read the close bubble after clearing toggle.
     fun isCloseBubbleAfterClearEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_CLOSE_BUBBLE_AFTER_CLEAR, false)
     }
 
-    // 保存“清除后关闭气泡”开关。
+    // 保存“清除后关闭气泡”开关 / Save the close bubble after clearing toggle.
     fun setCloseBubbleAfterClearEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_CLOSE_BUBBLE_AFTER_CLEAR, enabled) }
     }
 
-    // 读取实验性气泡折叠开关
+    // 读取实验性气泡折叠开关 / Read the experimental collapse bubble toggle.
     fun isExperimentalCollapseEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_EXPERIMENTAL_COLLAPSE, false)
     }
 
-    // 保存实验性气泡折叠开关
+    // 保存实验性气泡折叠开关 / Save the experimental collapse bubble toggle.
     fun setExperimentalCollapseEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_EXPERIMENTAL_COLLAPSE, enabled) }
     }
 
-    // 读取气泡免打扰开?/ Read the bubble DND toggle. Default is false (always popup).
+    // 读取气泡免打扰开关，默认关闭（始终弹出） / Read the bubble DND toggle; default is false so notifications always pop up.
     fun isBubbleDndModeEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_BUBBLE_DND, false)
     }
 
-    // 保存气泡免打扰开�?/ Save the bubble DND toggle.
+    // 保存气泡免打扰开关 / Save the bubble DND toggle.
     fun setBubbleDndModeEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_BUBBLE_DND, enabled) }
     }
 
-    // 读取接管通知开�?/ Read the notification takeover toggle.
+    // 读取接管通知开关 / Read the notification takeover toggle.
     fun isTakeOverNotifications(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_TAKE_OVER_NOTIFICATIONS, false)
     }
 
-    // 保存接管通知开�?/ Save the notification takeover toggle.
+    // 保存接管通知开关 / Save the notification takeover toggle.
     fun setTakeOverNotifications(context: Context, takeOver: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_TAKE_OVER_NOTIFICATIONS, takeOver) }

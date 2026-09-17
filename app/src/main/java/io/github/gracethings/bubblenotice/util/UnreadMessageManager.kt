@@ -41,9 +41,9 @@ object UnreadMessageManager {
             val existingIndex = messagesList.indexOfFirst { it.packageName == packageName && it.senderName == senderName }
             val newMessage = Message(packageName, senderName, messageText, timestamp, contentIntent, actions)
             if (existingIndex != -1) {
-                // To mimic native Android stacked notifications, we replace the existing message from this sender. (为了模仿原生 Android 堆叠通知，我们替换了该发送者的现有消息。)
-                // For MessagingStyle apps (Google Chat), the new messageText contains the full history (1\n1\n1). (对于 MessagingStyle 风格的应用（如 Google Chat），新的 messageText 包含完整的历史记录 (1\n1\n1)。)
-                // For WeChat, the new messageText is the summary ([3条]AAA: 1).
+                // 为了模仿原生 Android 堆叠通知，这里替换该发送者的现有消息。 / To mimic native Android stacked notifications, replace the existing message from this sender.
+                // 对于 MessagingStyle 应用，如 Google Chat，新的 messageText 包含“1\n1\n1”这样的完整历史记录。 / For MessagingStyle apps, such as Google Chat, the new messageText contains the full history like "1\n1\n1".
+                // 对于微信，新的 messageText 是类似“[3条]AAA: 1”的摘要。 / For WeChat, the new messageText is a summary such as "[3条]AAA: 1".
                 val oldMessage = messagesList[existingIndex]
                 val mergedIntent = contentIntent ?: oldMessage.contentIntent
                 val mergedActions = if (actions.isNotEmpty()) actions else oldMessage.actions
