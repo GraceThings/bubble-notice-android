@@ -42,19 +42,39 @@ private val LightColorScheme = lightColorScheme(
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun BubbleNoticeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Android 12+ 动态色 / Dynamic color is available on Android 12+.
-    dynamicColor: Boolean = true,
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    // 动态色开关 / Select whether the system color source is used.
+    dynamicColor: Boolean = false,
+    // 预设主题 / Pre-set theme palette.
+    accent: ThemeAccent = ThemeAccent.DEFAULT,
     content: @Composable () -> Unit
 ) {
+    val isDarkTheme = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colorScheme = when {
-        dynamicColor -> {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> accent.colorPair()?.let { colors ->
+            if (isDarkTheme) {
+                darkColorScheme(
+                    primary = colors.darkPrimary,
+                    secondary = colors.darkSecondary,
+                    tertiary = colors.darkTertiary
+                )
+            } else {
+                lightColorScheme(
+                    primary = colors.lightPrimary,
+                    secondary = colors.lightSecondary,
+                    tertiary = colors.lightTertiary
+                )
+            }
+        } ?: if (isDarkTheme) DarkColorScheme else LightColorScheme
     }
 
     MaterialTheme(

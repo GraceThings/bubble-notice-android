@@ -56,7 +56,7 @@ import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
 
 @Composable
-fun SettingsScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> Unit) {
+fun HomeScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> Unit) {
     val context = LocalContext.current
     var selectedCount by remember { mutableStateOf(0) }
     var hasListenerPermission by remember { mutableStateOf(false) }
@@ -333,10 +333,10 @@ fun SettingSwitchCard(
 
 @Preview(showBackground = true, name = "SettingsScreen Preview")
 @Composable
-fun PreviewSettingsScreen() {
+fun PreviewHomeScreen() {
     BubbleNoticeTheme {
         Surface {
-            SettingsScreen(onNavigateToSelector = {}, onSendNotification = {})
+            HomeScreen(onNavigateToSelector = {}, onSendNotification = {})
         }
     }
 }
