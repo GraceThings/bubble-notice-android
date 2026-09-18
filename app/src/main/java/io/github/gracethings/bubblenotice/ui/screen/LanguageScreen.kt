@@ -88,18 +88,26 @@ fun LanguageScreen(
                         onLanguageChanged(language)
                     }
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(language.labelRes),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
+                    Column(
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        Text(
+                            text = stringResource(language.labelRes),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = stringResource(language.subtitleRes),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     RadioButton(
                         selected = selectedLanguage == language,
                         onClick = null

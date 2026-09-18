@@ -147,7 +147,6 @@ class MainActivity : ComponentActivity() {
             var appearance by remember { mutableStateOf(ThemeSettings.getAppearanceState(context)) }
             BubbleNoticeTheme(
                 themeMode = appearance.themeMode,
-                dynamicColor = appearance.dynamicColor,
                 accent = appearance.accent
             ) {
                 var currentTab by remember { mutableStateOf("home") }
@@ -223,29 +222,51 @@ class MainActivity : ComponentActivity() {
                                         onSendNotification = { sendBubbleNotification(this@MainActivity) }
                                     )
                                 } else {
-                                    when (settingsPane) {
-                                        "appearance" -> AppearanceScreen(
-                                            appearance = appearance,
-                                            onAppearanceChanged = { newState ->
-                                                ThemeSettings.setThemeMode(context, newState.themeMode)
-                                                ThemeSettings.setDynamicColorEnabled(context, newState.dynamicColor)
-                                                ThemeSettings.setAccent(context, newState.accent)
-                                                appearance = newState
-                                            }
-                                        )
-                                        "language" -> LanguageScreen(
-                                            selectedLanguage = LanguageSettings.getSelected(context),
-                                            onLanguageChanged = { language ->
-                                                LanguageSettings.setSelected(context, language)
-                                                LanguageSettings.apply(context, language)
-                                            }
-                                        )
-                                        "about" -> AboutScreen()
-                                        else -> SettingsScreen(
-                                            onNavigateToAppearance = { settingsPane = "appearance" },
-                                            onNavigateToLanguage = { settingsPane = "language" },
-                                            onNavigateToAbout = { settingsPane = "about" }
-                                        )
+                                    val settingsOrder = mapOf(
+                                        "main" to 0,
+                                        "appearance" to 1,
+                                        "language" to 2,
+                                        "about" to 3
+                                    )
+                                    AnimatedContent(
+                                        targetState = settingsPane,
+                                        transitionSpec = {
+                                            val targetIndex = settingsOrder[targetState] ?: 0
+                                            val initialIndex = settingsOrder[initialState] ?: 0
+                                            val direction = if (targetIndex >= initialIndex) 1 else -1
+                                            slideInHorizontally(
+                                                animationSpec = tween(300),
+                                                initialOffsetX = { fullWidth -> direction * fullWidth }
+                                            ) togetherWith slideOutHorizontally(
+                                                animationSpec = tween(300),
+                                                targetOffsetX = { fullWidth -> -direction * fullWidth }
+                                            )
+                                        },
+                                        label = "SettingsPaneTransition"
+                                    ) { pane ->
+                                        when (pane) {
+                                            "appearance" -> AppearanceScreen(
+                                                appearance = appearance,
+                                                onAppearanceChanged = { newState ->
+                                                    ThemeSettings.setThemeMode(context, newState.themeMode)
+                                                    ThemeSettings.setAccent(context, newState.accent)
+                                                    appearance = newState
+                                                }
+                                            )
+                                            "language" -> LanguageScreen(
+                                                selectedLanguage = LanguageSettings.getSelected(context),
+                                                onLanguageChanged = { language ->
+                                                    LanguageSettings.setSelected(context, language)
+                                                    LanguageSettings.apply(context, language)
+                                                }
+                                            )
+                                            "about" -> AboutScreen()
+                                            else -> SettingsScreen(
+                                                onNavigateToAppearance = { settingsPane = "appearance" },
+                                                onNavigateToLanguage = { settingsPane = "language" },
+                                                onNavigateToAbout = { settingsPane = "about" }
+                                            )
+                                        }
                                     }
                                 }
                             }

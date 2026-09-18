@@ -43,10 +43,8 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun BubbleNoticeTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
-    // 动态色开关 / Select whether the system color source is used.
-    dynamicColor: Boolean = false,
-    // 预设主题 / Pre-set theme palette.
-    accent: ThemeAccent = ThemeAccent.DEFAULT,
+    // 主题色 / Theme color.
+    accent: ThemeAccent = ThemeAccent.DYNAMIC,
     content: @Composable () -> Unit
 ) {
     val isDarkTheme = when (themeMode) {
@@ -55,7 +53,7 @@ fun BubbleNoticeTheme(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        accent == ThemeAccent.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

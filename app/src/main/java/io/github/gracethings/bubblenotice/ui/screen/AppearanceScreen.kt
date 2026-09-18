@@ -111,25 +111,7 @@ fun AppearanceScreen(
             )
         }
 
-        // 动态主题色开关 / Dynamic color switch.
-        Text(
-            text = stringResource(R.string.appearance_dynamic_color_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp, start = 8.dp)
-        )
-        SettingSwitchCard(
-            title = stringResource(R.string.appearance_dynamic_color_title),
-            subtitle = stringResource(R.string.appearance_dynamic_color_subtitle),
-            checked = currentState.dynamicColor,
-            shape = bottomShape,
-            onCheckedChange = {
-                currentState = currentState.copy(dynamicColor = it)
-                onAppearanceChanged(currentState)
-            }
-        )
-
-        // 预设主题色 / PresetMaterialPalettes.
+        // 主题色 / Theme color.
         Text(
             text = stringResource(R.string.appearance_accent_title),
             style = MaterialTheme.typography.titleSmall,
@@ -141,14 +123,14 @@ fun AppearanceScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             val accentNames = listOf(
-                stringResource(R.string.appearance_accent_default),
+                stringResource(R.string.appearance_accent_dynamic),
                 stringResource(R.string.appearance_accent_ocean),
                 stringResource(R.string.appearance_accent_forest),
                 stringResource(R.string.appearance_accent_sunset),
                 stringResource(R.string.appearance_accent_plum)
             )
             val accentValues = listOf(
-                ThemeAccent.DEFAULT,
+                ThemeAccent.DYNAMIC,
                 ThemeAccent.OCEAN,
                 ThemeAccent.FOREST,
                 ThemeAccent.SUNSET,
@@ -193,7 +175,7 @@ private fun AppearanceOptionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -226,7 +208,7 @@ private fun AppearanceAccentCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -248,6 +230,7 @@ private fun AppearanceAccentCard(
     }
 }
 
+@Composable
 private fun accentColor(
     accent: ThemeAccent,
     themeMode: ThemeMode
@@ -255,7 +238,7 @@ private fun accentColor(
     val isDark = themeMode != ThemeMode.LIGHT
     return accent.colorPair()?.let { colors ->
         if (isDark) colors.darkPrimary else colors.lightPrimary
-    } ?: if (isDark) androidx.compose.ui.graphics.Color(0xFFD0BCFF) else androidx.compose.ui.graphics.Color(0xFF6750A4)
+    } ?: MaterialTheme.colorScheme.primary
 }
 
 @Preview(showBackground = true, name = "AppearanceScreen Preview")

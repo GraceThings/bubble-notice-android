@@ -26,16 +26,17 @@ import java.util.Locale
 // 原生语言选项 / Native language options.
 enum class AppLanguage(
     val tag: String,
-    @StringRes val labelRes: Int
+    @StringRes val labelRes: Int,
+    @StringRes val subtitleRes: Int
 ) {
-    SYSTEM("", R.string.language_system),
-    ENGLISH("en", R.string.language_english),
-    JAPANESE("ja", R.string.language_japanese),
-    KOREAN("ko", R.string.language_korean),
-    SIMPLIFIED_CHINESE("zh-CN", R.string.language_chinese_simplified),
-    TRADITIONAL_CHINESE("zh-TW", R.string.language_chinese_taiwan),
-    HONG_KONG_CHINESE("zh-HK", R.string.language_chinese_hong_kong),
-    MACAU_CHINESE("zh-MO", R.string.language_chinese_macau);
+    SYSTEM("", R.string.language_system, R.string.language_system_subtitle),
+    ENGLISH("en", R.string.language_english, R.string.language_english_subtitle),
+    JAPANESE("ja", R.string.language_japanese, R.string.language_japanese_subtitle),
+    KOREAN("ko", R.string.language_korean, R.string.language_korean_subtitle),
+    SIMPLIFIED_CHINESE("zh-CN", R.string.language_chinese_simplified, R.string.language_chinese_simplified_subtitle),
+    TRADITIONAL_CHINESE("zh-TW", R.string.language_chinese_taiwan, R.string.language_chinese_taiwan_subtitle),
+    HONG_KONG_CHINESE("zh-HK", R.string.language_chinese_hong_kong, R.string.language_chinese_hong_kong_subtitle),
+    MACAU_CHINESE("zh-MO", R.string.language_chinese_macau, R.string.language_chinese_macau_subtitle);
 
     companion object {
         fun fromTag(tag: String?): AppLanguage {

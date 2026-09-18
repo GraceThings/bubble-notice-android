@@ -95,11 +95,9 @@
     <string name="appearance_theme_mode_system">시스템 설정 따르기</string>
     <string name="appearance_theme_mode_light">라이트</string>
     <string name="appearance_theme_mode_dark">다크</string>
-    <string name="appearance_dynamic_color_title">다이내믹 컬러</string>
-    <string name="appearance_dynamic_color_subtitle">시스템 색상 소스를 사용합니다</string>
     <string name="appearance_accent_title">테마 색상</string>
-    <string name="appearance_accent_subtitle">프리셋 Material 색상 선택</string>
-    <string name="appearance_accent_default">기본</string>
+    <string name="appearance_accent_subtitle">다이내믹 또는 프리셋 Material 색상 선택</string>
+    <string name="appearance_accent_dynamic">다이내믹 컬러</string>
     <string name="appearance_accent_ocean">오션</string>
     <string name="appearance_accent_forest">포레스트</string>
     <string name="appearance_accent_sunset">선셋</string>

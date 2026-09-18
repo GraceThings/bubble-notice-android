@@ -95,11 +95,9 @@
     <string name="appearance_theme_mode_system">Follow System</string>
     <string name="appearance_theme_mode_light">Light</string>
     <string name="appearance_theme_mode_dark">Dark</string>
-    <string name="appearance_dynamic_color_title">Dynamic Color</string>
-    <string name="appearance_dynamic_color_subtitle">Use the system color source when available</string>
     <string name="appearance_accent_title">Theme Color</string>
-    <string name="appearance_accent_subtitle">Pick a preset Material palette</string>
-    <string name="appearance_accent_default">Default</string>
+    <string name="appearance_accent_subtitle">Dynamic or preset Material palette</string>
+    <string name="appearance_accent_dynamic">Dynamic Color</string>
     <string name="appearance_accent_ocean">Ocean</string>
     <string name="appearance_accent_forest">Forest</string>
     <string name="appearance_accent_sunset">Sunset</string>
@@ -112,4 +110,12 @@
     <string name="language_chinese_taiwan">Traditional Chinese (Taiwan)</string>
     <string name="language_chinese_hong_kong">Traditional Chinese (Hong Kong)</string>
     <string name="language_chinese_macau">Traditional Chinese (Macau)</string>
+    <string name="language_system_subtitle">Follow System</string>
+    <string name="language_english_subtitle">English</string>
+    <string name="language_japanese_subtitle">日本語</string>
+    <string name="language_korean_subtitle">한국어</string>
+    <string name="language_chinese_simplified_subtitle">简体中文</string>
+    <string name="language_chinese_taiwan_subtitle">繁體中文（台灣）</string>
+    <string name="language_chinese_hong_kong_subtitle">繁體中文（香港）</string>
+    <string name="language_chinese_macau_subtitle">繁體中文（澳門）</string>
 </resources>

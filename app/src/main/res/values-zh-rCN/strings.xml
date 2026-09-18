@@ -95,11 +95,9 @@
     <string name="appearance_theme_mode_system">跟随系统</string>
     <string name="appearance_theme_mode_light">浅色</string>
     <string name="appearance_theme_mode_dark">深色</string>
-    <string name="appearance_dynamic_color_title">动态色彩</string>
-    <string name="appearance_dynamic_color_subtitle">在可用时使用系统取色</string>
     <string name="appearance_accent_title">主题色</string>
-    <string name="appearance_accent_subtitle">选择一套 Material 预设配色</string>
-    <string name="appearance_accent_default">默认</string>
+    <string name="appearance_accent_subtitle">动态色彩或预设配色</string>
+    <string name="appearance_accent_dynamic">动态色彩</string>
     <string name="appearance_accent_ocean">海洋</string>
     <string name="appearance_accent_forest">森林</string>
     <string name="appearance_accent_sunset">黄昏</string>

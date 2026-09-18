@@ -140,7 +140,11 @@ class BubbleActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            BubbleNoticeTheme(dynamicColor = true) {
+            val appearance = io.github.gracethings.bubblenotice.ui.theme.ThemeSettings.getAppearanceState(this@BubbleActivity)
+            BubbleNoticeTheme(
+                themeMode = appearance.themeMode,
+                accent = appearance.accent
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

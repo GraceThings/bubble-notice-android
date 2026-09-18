@@ -21,20 +21,18 @@ import androidx.compose.ui.graphics.Color
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-enum class ThemeAccent { DEFAULT, OCEAN, FOREST, SUNSET, PLUM }
+enum class ThemeAccent { DYNAMIC, OCEAN, FOREST, SUNSET, PLUM }
 
 // Snapshot of appearance preferences used by the app theme and settings previews.
 data class AppearanceState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
-    val accent: ThemeAccent = ThemeAccent.DEFAULT
+    val accent: ThemeAccent = ThemeAccent.DYNAMIC
 )
 
 // Keep the app's visual settings grouped together so both appearance preview and theme can use them.
 object ThemeSettings {
     private const val PREFS_NAME = "bubble_prefs"
     private const val KEY_THEME_MODE = "theme_mode"
-    private const val KEY_DYNAMIC_COLOR = "dynamic_color_enabled"
     private const val KEY_ACCENT = "theme_accent"
 
     fun getThemeMode(context: Context): ThemeMode {
@@ -49,21 +47,11 @@ object ThemeSettings {
             .edit().putString(KEY_THEME_MODE, mode.name).apply()
     }
 
-    fun isDynamicColorEnabled(context: Context): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_DYNAMIC_COLOR, true)
-    }
-
-    fun setDynamicColorEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_DYNAMIC_COLOR, enabled).apply()
-    }
-
     fun getAccent(context: Context): ThemeAccent {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_ACCENT, ThemeAccent.DEFAULT.name)
+        return prefs.getString(KEY_ACCENT, ThemeAccent.DYNAMIC.name)
             ?.let { runCatching { ThemeAccent.valueOf(it) }.getOrNull() }
-            ?: ThemeAccent.DEFAULT
+            ?: ThemeAccent.DYNAMIC
     }
 
     fun setAccent(context: Context, accent: ThemeAccent) {
@@ -74,7 +62,6 @@ object ThemeSettings {
     fun getAppearanceState(context: Context): AppearanceState {
         return AppearanceState(
             themeMode = getThemeMode(context),
-            dynamicColor = isDynamicColorEnabled(context),
             accent = getAccent(context)
         )
     }
@@ -127,5 +114,5 @@ fun ThemeAccent.colorPair(): ThemeAccentColors? = when (this) {
         darkTertiary = Color(0xFFEFB8C8)
     )
 
-    ThemeAccent.DEFAULT -> null
+    ThemeAccent.DYNAMIC -> null
 }

@@ -95,11 +95,9 @@
     <string name="appearance_theme_mode_system">システムに従う</string>
     <string name="appearance_theme_mode_light">ライト</string>
     <string name="appearance_theme_mode_dark">ダーク</string>
-    <string name="appearance_dynamic_color_title">ダイナミックカラー</string>
-    <string name="appearance_dynamic_color_subtitle">利用できる場合はシステムの配色を使用します</string>
     <string name="appearance_accent_title">テーマカラー</string>
-    <string name="appearance_accent_subtitle">プリセットの Material パレットを選択</string>
-    <string name="appearance_accent_default">既定</string>
+    <string name="appearance_accent_subtitle">ダイナミックまたはプリセットのパレットを選択</string>
+    <string name="appearance_accent_dynamic">ダイナミックカラー</string>
     <string name="appearance_accent_ocean">オーシャン</string>
     <string name="appearance_accent_forest">フォレスト</string>
     <string name="appearance_accent_sunset">サンセット</string>
