@@ -166,8 +166,11 @@ class BubbleActivity : ComponentActivity() {
                                 selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
 
                                 val expandedPackageId = packageFilter.value
-                                val expandedIsEmpty = expandedPackageId != null &&
+                                val expandedIsEmpty = if (expandedPackageId != null) {
                                     !UnreadMessageManager.hasMessagesForPackage(expandedPackageId)
+                                } else {
+                                    UnreadMessageManager.messagesFlow.value.isEmpty()
+                                }
                                 if (expandedIsEmpty &&
                                     AppUtils.isCloseBubbleAfterClearEnabled(this@BubbleActivity)
                                 ) {
@@ -539,15 +542,7 @@ class BubbleActivity : ComponentActivity() {
                             }
                         )
                     }
-                   .clickable {
-                        val remainingCards = if (packageFilter.value == null) {
-                            UnreadMessageManager.messagesFlow.value
-                        } else {
-                            UnreadMessageManager.messagesFlow.value.filter {
-                                it.packageName == packageFilter.value
-                            }
-                        }
-                        val shouldCloseWholeBubble = remainingCards.size == 1
+                    .clickable {
                         val pendingIntent = group.messages.firstOrNull()?.contentIntent
                         val sentOriginalIntent = sendNotificationTargetIntent(
                             context,
@@ -555,22 +550,34 @@ class BubbleActivity : ComponentActivity() {
                             pendingIntent
                         )
                         UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                        coroutineScope.launch {
+
+                        val currentPackageFilter = packageFilter.value
+                        val isNowEmpty = if (currentPackageFilter != null) {
+                            !UnreadMessageManager.hasMessagesForPackage(currentPackageFilter)
+                        } else {
+                            UnreadMessageManager.messagesFlow.value.isEmpty()
+                        }
+                        val shouldClose = isNowEmpty && AppUtils.isCloseBubbleAfterClearEnabled(context)
+                        val appContext = context.applicationContext
+                        val activity = context as? android.app.Activity
+
+                        io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.appScope.launch {
                             val launched = AppUtils.ensureAppForegroundAfterLaunch(
-                                context,
+                                appContext,
                                 group.packageName,
                                 sentOriginalIntent
                             )
-                            closeBubbleIfEmptyAfterLaunch(
-                                context,
-                                packageFilter.value,
-                                if (shouldCloseWholeBubble) 0L else if (launched) 400L else 150L
-                            )
-                            if (shouldCloseWholeBubble) {
-                                kotlinx.coroutines.delay(100L)
-                                io.github.gracethings.bubblenotice.service
-                                    .BubbleNotificationListenerService
-                                    .closeAfterActivityCleared(context, packageFilter.value)
+                            if (shouldClose) {
+                                kotlinx.coroutines.delay(if (launched) 300L else 100L)
+                                io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
+                                    .closeAfterActivityCleared(context, currentPackageFilter)
+                                withContext(Dispatchers.Main) {
+                                    activity?.finish()
+                                }
+                            } else if (!launched && AppUtils.isExperimentalCollapseEnabled(appContext)) {
+                                withContext(Dispatchers.Main) {
+                                    activity?.moveTaskToBack(true)
+                                }
                             }
                         }
                     },

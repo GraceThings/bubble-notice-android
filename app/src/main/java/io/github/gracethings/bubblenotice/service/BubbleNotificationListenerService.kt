@@ -78,7 +78,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         private val perAppStateLock = Any()
         private val programmaticCancellationIds = mutableSetOf<Int>()
 
-        private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        internal val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
         // 存储最后一次气泡通知的数据，用于仅隐藏通知栏但保留气泡。 / Store the last bubble notification data for suppressing the shade while keeping the bubble alive.
         private var lastBubbleIntent: PendingIntent? = null
