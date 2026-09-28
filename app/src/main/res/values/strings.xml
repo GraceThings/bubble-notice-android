@@ -118,4 +118,11 @@
     <string name="language_chinese_taiwan_subtitle">繁體中文（台灣）</string>
     <string name="language_chinese_hong_kong_subtitle">繁體中文（香港）</string>
     <string name="language_chinese_macau_subtitle">繁體中文（澳門）</string>
+    <string name="crash_dialog_title">Application Error</string>
+    <string name="crash_dialog_message">Bubble Notice encountered an unexpected error. You can share the crash log with the developer to help fix it.</string>
+    <string name="crash_dialog_send_email">Send Email</string>
+    <string name="crash_dialog_copy">Copy Log</string>
+    <string name="crash_dialog_close">Close</string>
+    <string name="crash_dialog_copied">Crash log copied to clipboard</string>
+    <string name="crash_dialog_share_chooser">Send crash log</string>
 </resources>

@@ -110,4 +110,11 @@
     <string name="language_chinese_taiwan">繁体字中国語（台湾）</string>
     <string name="language_chinese_hong_kong">繁体字中国語（香港）</string>
     <string name="language_chinese_macau">繁体字中国語（マカオ）</string>
+    <string name="crash_dialog_title">アプリケーションエラー</string>
+    <string name="crash_dialog_message">Bubble Notice で予期しないエラーが発生しました。開発者にエラーログを送信して、問題の修正にご協力ください。</string>
+    <string name="crash_dialog_send_email">メールを送信</string>
+    <string name="crash_dialog_copy">ログをコピー</string>
+    <string name="crash_dialog_close">閉じる</string>
+    <string name="crash_dialog_copied">エラーログをクリップボードにコピーしました</string>
+    <string name="crash_dialog_share_chooser">エラーログを送信</string>
 </resources>

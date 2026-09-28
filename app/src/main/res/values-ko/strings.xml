@@ -110,4 +110,11 @@
     <string name="language_chinese_taiwan">번체 중국어(대만)</string>
     <string name="language_chinese_hong_kong">번체 중국어(홍콩)</string>
     <string name="language_chinese_macau">번체 중국어(마카오)</string>
+    <string name="crash_dialog_title">애플리케이션 오류</string>
+    <string name="crash_dialog_message">Bubble Notice에서 예기치 않은 오류가 발생했습니다. 개발자에게 오류 로그를 공유하여 문제 해결을 도울 수 있습니다.</string>
+    <string name="crash_dialog_send_email">이메일 보내기</string>
+    <string name="crash_dialog_copy">로그 복사</string>
+    <string name="crash_dialog_close">닫기</string>
+    <string name="crash_dialog_copied">오류 로그가 클립보드에 복사되었습니다</string>
+    <string name="crash_dialog_share_chooser">오류 로그 보내기</string>
 </resources>

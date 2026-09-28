@@ -31,15 +31,19 @@ import androidx.core.view.WindowInsetsControllerCompat
  * androidx.activity helper when it selects its API 28/29/35 branches.
  */
 fun ComponentActivity.enableEdgeToEdgeCompat() {
-    val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-        Configuration.UI_MODE_NIGHT_YES
+    try {
+        val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
 
-    WindowCompat.setDecorFitsSystemWindows(window, false)
-    window.attributes.layoutInDisplayCutoutMode =
-        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-    window.isNavigationBarContrastEnforced = false
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.attributes.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        window.isNavigationBarContrastEnforced = false
 
-    val insetsController = WindowInsetsControllerCompat(window, window.decorView)
-    insetsController.isAppearanceLightStatusBars = !isDarkMode
-    insetsController.isAppearanceLightNavigationBars = !isDarkMode
+        val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = !isDarkMode
+        insetsController.isAppearanceLightNavigationBars = !isDarkMode
+    } catch (e: Throwable) {
+        io.github.gracethings.bubblenotice.util.AppLogger.w("EdgeToEdgeCompat", "Failed to apply full edge-to-edge styling: ${e.message}")
+    }
 }

@@ -14,4 +14,9 @@
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:windowBackground">?android:attr/colorBackground</item>
     </style>
+
+    <style name="Theme.BubbleNotice.CrashDialog" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

@@ -76,6 +76,19 @@ object AppLogger {
             ?.sortedBy { it.name } ?: emptyList()
     }
 
+    fun getRecentLogs(maxLines: Int = 100): String {
+        val files = getLogFiles()
+        if (files.isEmpty()) return "No logs available"
+        val latestFile = files.last()
+        return try {
+            val lines = latestFile.readLines()
+            val recent = if (lines.size > maxLines) lines.takeLast(maxLines) else lines
+            recent.joinToString("\n")
+        } catch (e: Exception) {
+            "Failed to read logs: ${e.message}"
+        }
+    }
+
     private fun writeToFile(level: String, tag: String, msg: String) {
         val file = getCurrentLogFile() ?: return
         try {

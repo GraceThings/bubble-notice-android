@@ -56,7 +56,9 @@ import io.github.gracethings.bubblenotice.ui.screen.LanguageScreen
 import io.github.gracethings.bubblenotice.ui.screen.SettingsScreen
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import io.github.gracethings.bubblenotice.ui.theme.ThemeSettings
+import io.github.gracethings.bubblenotice.util.AppLogger
 import io.github.gracethings.bubblenotice.util.AppUtils
+import io.github.gracethings.bubblenotice.util.CrashHandler
 import io.github.gracethings.bubblenotice.util.LanguageSettings
 
 class MainActivity : ComponentActivity() {
@@ -65,7 +67,12 @@ class MainActivity : ComponentActivity() {
 
     // 默认应用当前偏好语言 / Apply the saved language to the root context.
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(LanguageSettings.wrap(newBase, LanguageSettings.getSelected(newBase)))
+        val wrapped = try {
+            LanguageSettings.wrap(newBase, LanguageSettings.getSelected(newBase))
+        } catch (_: Throwable) {
+            newBase
+        }
+        super.attachBaseContext(wrapped)
     }
 
     companion object {
@@ -136,13 +143,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        try {
+            enableEdgeToEdgeCompat()
+            createNotificationChannel()
 
-        enableEdgeToEdgeCompat()
-        createNotificationChannel()
+            handleIntent(intent)
 
-        handleIntent(intent)
-
-        setContent {
+            setContent {
             val context = LocalContext.current
             var appearance by remember { mutableStateOf(ThemeSettings.getAppearanceState(context)) }
             BubbleNoticeTheme(
@@ -275,7 +282,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    } catch (t: Throwable) {
+        AppLogger.e("MainActivity", "Fatal error during MainActivity.onCreate", t)
+        CrashHandler.handleException(this, t)
     }
+}
 
     // 处理后台再次启动 / Handle relaunches while the Activity is in the background.
     override fun onNewIntent(intent: Intent) {
@@ -292,30 +303,34 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun createNotificationChannel() {
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.deleteNotificationChannel("bubble_popup_channel")
+        try {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.deleteNotificationChannel("bubble_popup_channel")
 
-        // 静音通知渠道 / Silent notification channel.
-        val silentChannel = NotificationChannel(
-            AppUtils.BUBBLE_CHANNEL_SILENT_ID,
-            getString(R.string.notif_channel_name_silent),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            setAllowBubbles(true)
-            setSound(null, null)
-            enableVibration(false)
-        }
-        nm.createNotificationChannel(silentChannel)
+            // 静音通知渠道 / Silent notification channel.
+            val silentChannel = NotificationChannel(
+                AppUtils.BUBBLE_CHANNEL_SILENT_ID,
+                getString(R.string.notif_channel_name_silent),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                setAllowBubbles(true)
+                setSound(null, null)
+                enableVibration(false)
+            }
+            nm.createNotificationChannel(silentChannel)
 
-        // 提醒通知渠道 / Alert notification channel.
-        val alertChannel = NotificationChannel(
-            AppUtils.BUBBLE_CHANNEL_ALERT_ID,
-            getString(R.string.notif_channel_name_alert),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            setAllowBubbles(true)
+            // 提醒通知渠道 / Alert notification channel.
+            val alertChannel = NotificationChannel(
+                AppUtils.BUBBLE_CHANNEL_ALERT_ID,
+                getString(R.string.notif_channel_name_alert),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                setAllowBubbles(true)
+            }
+            nm.createNotificationChannel(alertChannel)
+        } catch (e: Throwable) {
+            AppLogger.w("MainActivity", "Failed to create notification channels: ${e.message}")
         }
-        nm.createNotificationChannel(alertChannel)
     }
 
 }

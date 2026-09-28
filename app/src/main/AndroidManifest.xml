@@ -45,6 +45,15 @@
             android:theme="@style/Theme.BubbleNotice.BubbleActivity"
             android:resizeableActivity="true"/>
 
+        <activity
+            android:name=".CrashReportActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.BubbleNotice.CrashDialog" />
+
 
         <service
             android:name=".service.BubbleNotificationListenerService"

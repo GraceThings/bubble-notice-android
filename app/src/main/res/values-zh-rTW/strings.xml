@@ -110,4 +110,11 @@
     <string name="language_chinese_taiwan">繁體中文（台灣）</string>
     <string name="language_chinese_hong_kong">繁體中文（香港）</string>
     <string name="language_chinese_macau">繁體中文（澳門）</string>
+    <string name="crash_dialog_title">應用程式運行異常</string>
+    <string name="crash_dialog_message">Bubble Notice 遇到未擷取的異常。您可以將錯誤記錄傳送給開發人員，以協助排查和修復該問題。</string>
+    <string name="crash_dialog_send_email">發送郵件</string>
+    <string name="crash_dialog_copy">複製記錄</string>
+    <string name="crash_dialog_close">關閉</string>
+    <string name="crash_dialog_copied">錯誤記錄已複製到剪貼簿</string>
+    <string name="crash_dialog_share_chooser">發送錯誤記錄</string>
 </resources>

@@ -110,5 +110,12 @@
     <string name="language_chinese_taiwan">繁体中文（台湾）</string>
     <string name="language_chinese_hong_kong">繁体中文（香港）</string>
     <string name="language_chinese_macau">繁体中文（澳门）</string>
+    <string name="crash_dialog_title">应用运行异常</string>
+    <string name="crash_dialog_message">Bubble Notice 遇到了未捕获的异常。您可以将错误日志发送给开发者，以协助排查和修复该问题。</string>
+    <string name="crash_dialog_send_email">发送邮件</string>
+    <string name="crash_dialog_copy">复制日志</string>
+    <string name="crash_dialog_close">关闭</string>
+    <string name="crash_dialog_copied">错误日志已复制到剪贴板</string>
+    <string name="crash_dialog_share_chooser">发送错误日志</string>
 </resources>
 
