@@ -40,9 +40,9 @@
 
 ### 动图对比 && 功能演示
 
-| 原生通知 | 启用气泡通知 | 未读通知 | 自动跳转 |
+| 原生通知 | 启用气泡通知 | 未读通知 | 自动跳转 | 自动关闭 |
 |---|---|---|---|
-| <img src="screenshots/original-notification.gif" width="200" /> | <img src="screenshots/bubble-notice-activated.gif" width="200" /> | <img src="screenshots/unread-messages.gif" width="200" /> | <img src="screenshots/auto-jump.gif" width="200" /> |
+| <img src="screenshots/original-notification.gif" width="200" /> | <img src="screenshots/bubble-notice-activated.gif" width="200" /> | <img src="screenshots/unread-messages.gif" width="200" /> | <img src="screenshots/auto-jump.gif" width="200" /> | <img src="screenshots/auto-close.gif" width="200" /> |
 
 ## 功能
 
