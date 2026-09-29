@@ -4,4 +4,5 @@
 <li>Fix status bar padding to prevent topmost notification overlap.</li>
 <li>Auto-close bubbles when the last notification card is opened.</li>
 <li>Add a crash dialog to copy or email error logs to the developer.</li>
+<li>Add back navigation to settings screens and update transition animations.</li>
 </ul>
