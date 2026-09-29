@@ -52,12 +52,18 @@ import io.github.gracethings.bubblenotice.R
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import io.github.gracethings.bubblenotice.ui.theme.ThemeAccent
 import io.github.gracethings.bubblenotice.ui.theme.ThemeMode
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import io.github.gracethings.bubblenotice.ui.theme.colorPair
 
 @Composable
 fun AppearanceScreen(
     appearance: io.github.gracethings.bubblenotice.ui.theme.AppearanceState,
-    onAppearanceChanged: (io.github.gracethings.bubblenotice.ui.theme.AppearanceState) -> Unit
+    onAppearanceChanged: (io.github.gracethings.bubblenotice.ui.theme.AppearanceState) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     var currentState by remember { mutableStateOf(appearance) }
 
@@ -73,12 +79,28 @@ fun AppearanceScreen(
             .padding(horizontal = 16.dp)
             .padding(bottom = 24.dp)
     ) {
-        Text(
-            text = stringResource(R.string.settings_appearance_title),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.offset(x = (-8).dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.selector_back)
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_appearance_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.offset(x = (-4).dp)
+            )
+        }
 
         // 白天/黑夜/跟随系统 / Light, dark or follow the system.
         Text(

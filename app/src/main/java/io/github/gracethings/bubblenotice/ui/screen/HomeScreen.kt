@@ -118,9 +118,8 @@ fun HomeScreen(onNavigateToSelector: () -> Unit, onSendNotification: () -> Unit)
         ) {
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge, // 设置为 headlineLarge，与关于页标题一致 / Set to headlineLarge to match the About screen title
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 16.dp)
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold
             )
         }
 

@@ -45,13 +45,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.gracethings.bubblenotice.R
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import io.github.gracethings.bubblenotice.ui.theme.BubbleNoticeTheme
 import io.github.gracethings.bubblenotice.util.AppLanguage
 
 @Composable
 fun LanguageScreen(
     selectedLanguage: AppLanguage,
-    onLanguageChanged: (AppLanguage) -> Unit
+    onLanguageChanged: (AppLanguage) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     val topShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
     val middleShape = RoundedCornerShape(4.dp)
@@ -64,12 +70,28 @@ fun LanguageScreen(
             .padding(horizontal = 16.dp)
             .padding(bottom = 24.dp)
     ) {
-        Text(
-            text = stringResource(R.string.settings_language_title),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.offset(x = (-8).dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.selector_back)
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_language_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.offset(x = (-4).dp)
+            )
+        }
 
         val languages = AppLanguage.values()
         languages.forEachIndexed { index, language ->

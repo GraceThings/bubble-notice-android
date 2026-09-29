@@ -37,8 +37,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.core.app.NotificationCompat
@@ -180,7 +183,17 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        if (!showSelector) {
+                        AnimatedVisibility(
+                            visible = !showSelector,
+                            enter = slideInVertically(
+                                animationSpec = tween(300),
+                                initialOffsetY = { fullHeight -> fullHeight }
+                            ),
+                            exit = slideOutVertically(
+                                animationSpec = tween(300),
+                                targetOffsetY = { fullHeight -> fullHeight }
+                            )
+                        ) {
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.surface,
                                 tonalElevation = 0.dp
@@ -206,73 +219,101 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        if (showSelector) {
-                            AppSelectorScreen(onBack = { showSelector = false })
-                        } else {
-                            AnimatedContent(
-                                targetState = currentTab,
-                                transitionSpec = {
-                                    val direction = if (targetState == "settings") 1 else -1
+                        AnimatedContent(
+                            targetState = showSelector,
+                            transitionSpec = {
+                                if (targetState) {
                                     slideInHorizontally(
                                         animationSpec = tween(300),
-                                        initialOffsetX = { fullWidth -> direction * fullWidth }
+                                        initialOffsetX = { fullWidth -> fullWidth }
                                     ) togetherWith slideOutHorizontally(
                                         animationSpec = tween(300),
-                                        targetOffsetX = { fullWidth -> -direction * fullWidth }
-                                    )
-                                },
-                                label = "TabTransition"
-                            ) { tab ->
-                                if (tab == "home") {
-                                    HomeScreen(
-                                        onNavigateToSelector = { showSelector = true },
-                                        onSendNotification = { sendBubbleNotification(this@MainActivity) }
+                                        targetOffsetX = { fullWidth -> -fullWidth }
                                     )
                                 } else {
-                                    val settingsOrder = mapOf(
-                                        "main" to 0,
-                                        "appearance" to 1,
-                                        "language" to 2,
-                                        "about" to 3
+                                    slideInHorizontally(
+                                        animationSpec = tween(300),
+                                        initialOffsetX = { fullWidth -> -fullWidth }
+                                    ) togetherWith slideOutHorizontally(
+                                        animationSpec = tween(300),
+                                        targetOffsetX = { fullWidth -> fullWidth }
                                     )
-                                    AnimatedContent(
-                                        targetState = settingsPane,
-                                        transitionSpec = {
-                                            val targetIndex = settingsOrder[targetState] ?: 0
-                                            val initialIndex = settingsOrder[initialState] ?: 0
-                                            val direction = if (targetIndex >= initialIndex) 1 else -1
-                                            slideInHorizontally(
-                                                animationSpec = tween(300),
-                                                initialOffsetX = { fullWidth -> direction * fullWidth }
-                                            ) togetherWith slideOutHorizontally(
-                                                animationSpec = tween(300),
-                                                targetOffsetX = { fullWidth -> -direction * fullWidth }
-                                            )
-                                        },
-                                        label = "SettingsPaneTransition"
-                                    ) { pane ->
-                                        when (pane) {
-                                            "appearance" -> AppearanceScreen(
-                                                appearance = appearance,
-                                                onAppearanceChanged = { newState ->
-                                                    ThemeSettings.setThemeMode(context, newState.themeMode)
-                                                    ThemeSettings.setAccent(context, newState.accent)
-                                                    appearance = newState
-                                                }
-                                            )
-                                            "language" -> LanguageScreen(
-                                                selectedLanguage = LanguageSettings.getSelected(context),
-                                                onLanguageChanged = { language ->
-                                                    LanguageSettings.setSelected(context, language)
-                                                    LanguageSettings.apply(context, language)
-                                                }
-                                            )
-                                            "about" -> AboutScreen()
-                                            else -> SettingsScreen(
-                                                onNavigateToAppearance = { settingsPane = "appearance" },
-                                                onNavigateToLanguage = { settingsPane = "language" },
-                                                onNavigateToAbout = { settingsPane = "about" }
-                                            )
+                                }
+                            },
+                            label = "SelectorTransition"
+                        ) { isSelectorOpen ->
+                            if (isSelectorOpen) {
+                                AppSelectorScreen(onBack = { showSelector = false })
+                            } else {
+                                AnimatedContent(
+                                    targetState = currentTab,
+                                    transitionSpec = {
+                                        val direction = if (targetState == "settings") 1 else -1
+                                        slideInHorizontally(
+                                            animationSpec = tween(300),
+                                            initialOffsetX = { fullWidth -> direction * fullWidth }
+                                        ) togetherWith slideOutHorizontally(
+                                            animationSpec = tween(300),
+                                            targetOffsetX = { fullWidth -> -direction * fullWidth }
+                                        )
+                                    },
+                                    label = "TabTransition"
+                                ) { tab ->
+                                    if (tab == "home") {
+                                        HomeScreen(
+                                            onNavigateToSelector = { showSelector = true },
+                                            onSendNotification = { sendBubbleNotification(this@MainActivity) }
+                                        )
+                                    } else {
+                                        val settingsOrder = mapOf(
+                                            "main" to 0,
+                                            "appearance" to 1,
+                                            "language" to 2,
+                                            "about" to 3
+                                        )
+                                        AnimatedContent(
+                                            targetState = settingsPane,
+                                            transitionSpec = {
+                                                val targetIndex = settingsOrder[targetState] ?: 0
+                                                val initialIndex = settingsOrder[initialState] ?: 0
+                                                val direction = if (targetIndex >= initialIndex) 1 else -1
+                                                slideInHorizontally(
+                                                    animationSpec = tween(300),
+                                                    initialOffsetX = { fullWidth -> direction * fullWidth }
+                                                ) togetherWith slideOutHorizontally(
+                                                    animationSpec = tween(300),
+                                                    targetOffsetX = { fullWidth -> -direction * fullWidth }
+                                                )
+                                            },
+                                            label = "SettingsPaneTransition"
+                                        ) { pane ->
+                                            when (pane) {
+                                                "appearance" -> AppearanceScreen(
+                                                    appearance = appearance,
+                                                    onAppearanceChanged = { newState ->
+                                                        ThemeSettings.setThemeMode(context, newState.themeMode)
+                                                        ThemeSettings.setAccent(context, newState.accent)
+                                                        appearance = newState
+                                                    },
+                                                    onBack = { settingsPane = "main" }
+                                                )
+                                                "language" -> LanguageScreen(
+                                                    selectedLanguage = LanguageSettings.getSelected(context),
+                                                    onLanguageChanged = { language ->
+                                                        LanguageSettings.setSelected(context, language)
+                                                        LanguageSettings.apply(context, language)
+                                                    },
+                                                    onBack = { settingsPane = "main" }
+                                                )
+                                                "about" -> AboutScreen(
+                                                    onBack = { settingsPane = "main" }
+                                                )
+                                                else -> SettingsScreen(
+                                                    onNavigateToAppearance = { settingsPane = "appearance" },
+                                                    onNavigateToLanguage = { settingsPane = "language" },
+                                                    onNavigateToAbout = { settingsPane = "about" }
+                                                )
+                                            }
                                         }
                                     }
                                 }

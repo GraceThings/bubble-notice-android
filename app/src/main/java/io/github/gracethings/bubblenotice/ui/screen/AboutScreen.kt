@@ -35,9 +35,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Description
@@ -54,6 +56,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -102,7 +105,9 @@ private const val PRIVACY_URL = "https://github.com/GraceThings/bubble-notice-an
 private const val TRANSLATION_URL = "https://github.com/GraceThings/bubble-notice-android/issues/5"
 
 @Composable
-fun AboutScreen() {
+fun AboutScreen(
+    onBack: () -> Unit = {}
+) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val dateFormat = remember { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()) }
@@ -149,12 +154,28 @@ fun AboutScreen() {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
-        Text(
-            text = stringResource(R.string.about_title),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 32.dp, bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.offset(x = (-8).dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.selector_back)
+                )
+            }
+            Text(
+                text = stringResource(R.string.about_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.offset(x = (-4).dp)
+            )
+        }
 
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
