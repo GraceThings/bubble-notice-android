@@ -41,7 +41,7 @@ A lightweight bubble notice tool, providing more intuitive notifications for the
 ### GIF Comparison && Feature Demos
 
 | Original Notifications | Bubble Notice Activated | Unread Messages | Auto Jump | Auto Close |
-|---|---|---|---|
+|---|---|---|---|---|
 | <img src="screenshots/original-notification.gif" width="200" /> | <img src="screenshots/bubble-notice-activated.gif" width="200" /> | <img src="screenshots/unread-messages.gif" width="200" /> | <img src="screenshots/auto-jump.gif" width="200" /> | <img src="screenshots/auto-close.gif" width="200" /> |
 
 ## Features
