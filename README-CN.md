@@ -73,7 +73,7 @@
 
 | 微信 | 支付宝 |
 |---|---|
-| <img src="screenshots/sponsor/wechat.png" width="200" /> | <img src="screenshots/sponsor/alipay.jpg" width="200" /> |
+| <img src="screenshots/wechat.png" width="200" /> | <img src="screenshots/alipay.jpg" width="200" /> |
 
 
 ## 开源协议
