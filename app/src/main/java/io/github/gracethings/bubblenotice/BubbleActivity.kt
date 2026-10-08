@@ -371,6 +371,8 @@ class BubbleActivity : ComponentActivity() {
             UnreadMessageManager.messagesFlow.value.isNotEmpty()
         }
         if (remainingMessages || !AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+            io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
+                .updateBubbleToLatestRemaining(context.applicationContext, packageFilter)
             return
         }
         io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
@@ -498,7 +500,7 @@ class BubbleActivity : ComponentActivity() {
                         coroutineScope.launch {
                             offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium))
                             UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                            closeBubbleIfEmptyAfterActivity(context, packageFilter.value)
+                            closeBubbleIfEmptyAfterActivity(context, packageFilter.value ?: group.packageName)
                         }
                     }
                     .padding(horizontal = 24.dp),
@@ -574,9 +576,13 @@ class BubbleActivity : ComponentActivity() {
                                 withContext(Dispatchers.Main) {
                                     activity?.finish()
                                 }
-                            } else if (!launched && AppUtils.isExperimentalCollapseEnabled(appContext)) {
-                                withContext(Dispatchers.Main) {
-                                    activity?.moveTaskToBack(true)
+                            } else {
+                                io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
+                                    .updateBubbleToLatestRemaining(appContext, currentPackageFilter ?: group.packageName)
+                                if (!launched && AppUtils.isExperimentalCollapseEnabled(appContext)) {
+                                    withContext(Dispatchers.Main) {
+                                        activity?.moveTaskToBack(true)
+                                    }
                                 }
                             }
                         }
@@ -599,20 +605,25 @@ class BubbleActivity : ComponentActivity() {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val appIcon = remember(group.packageName) {
+                        val realPkg = group.packageName.substringBefore(":")
+                        val contactAvatar = remember(group) {
+                            group.messages.firstOrNull { it.avatarBitmap != null }?.avatarBitmap?.asImageBitmap()
+                        }
+                        val appIcon = remember(realPkg) {
                             try {
-                                context.packageManager.getApplicationIcon(group.packageName).toBitmap(96, 96).asImageBitmap()
+                                context.packageManager.getApplicationIcon(realPkg).toBitmap(96, 96).asImageBitmap()
                             } catch (e: Exception) {
                                 null
                             }
                         }
-                        if (appIcon != null) {
+                        val displayBitmap = contactAvatar ?: appIcon
+                        if (displayBitmap != null) {
                             Image(
-                                bitmap = appIcon,
+                                bitmap = displayBitmap,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(38.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(if (contactAvatar != null) CircleShape else RoundedCornerShape(10.dp))
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                         }

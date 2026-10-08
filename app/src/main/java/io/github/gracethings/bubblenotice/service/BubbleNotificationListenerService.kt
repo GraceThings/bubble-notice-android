@@ -44,6 +44,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 
 class BubbleNotificationListenerService : NotificationListenerService() {
 
@@ -302,6 +308,472 @@ class BubbleNotificationListenerService : NotificationListenerService() {
             }
             cancelOwnNotification(context, MAIN_BUBBLE_NOTIFICATION_ID)
         }
+
+        fun notificationIdForPackage(pkgId: String): Int {
+            synchronized(perAppStateLock) {
+                perAppNotificationIds[pkgId]?.let { return it }
+
+                var candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE +
+                        (pkgId.hashCode() and Int.MAX_VALUE) % PER_APP_BUBBLE_NOTIFICATION_ID_RANGE
+                while (notificationIdToPackage.containsKey(candidate)) {
+                    candidate += 1
+                    if (candidate >= PER_APP_BUBBLE_NOTIFICATION_ID_BASE + PER_APP_BUBBLE_NOTIFICATION_ID_RANGE) {
+                        candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE
+                    }
+                }
+
+                perAppNotificationIds[pkgId] = candidate
+                notificationIdToPackage[candidate] = pkgId
+                return candidate
+            }
+        }
+
+        fun shortcutIdForPackage(pkgId: String): String {
+            synchronized(perAppStateLock) {
+                perAppShortcutIds[pkgId]?.let { return it }
+
+                val sanitized = pkgId.map { char ->
+                    if (char.isLetterOrDigit() || char == '_') char else '_'
+                }.joinToString("")
+                val shortcutId = "bubble_notice_$sanitized"
+                perAppShortcutIds[pkgId] = shortcutId
+                return shortcutId
+            }
+        }
+
+        fun markActivePerAppBubble(pkgId: String) {
+            synchronized(perAppStateLock) {
+                activePerAppBubbles.remove(pkgId)
+                activePerAppBubbles[pkgId] = System.currentTimeMillis()
+            }
+        }
+
+        fun ensurePerAppBubbleCapacity(context: Context, maxAllowed: Int) {
+            synchronized(perAppStateLock) {
+                while (activePerAppBubbles.isNotEmpty() && activePerAppBubbles.size >= maxAllowed) {
+                    val evictedPkgId = activePerAppBubbles.keys.firstOrNull { pkgId ->
+                        !UnreadMessageManager.hasMessagesForPackage(pkgId)
+                    } ?: activePerAppBubbles.keys.first()
+                    cancelPerAppBubbleLocked(context, evictedPkgId)
+                }
+            }
+        }
+
+        fun getAppIconBitmap(context: Context, packageName: String): Bitmap {
+            val realPkg = packageName.substringBefore(":")
+            val drawable = try {
+                context.packageManager.getApplicationIcon(realPkg)
+            } catch (e: Exception) {
+                androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!
+            }
+            return drawable.toBitmap(144, 144)
+        }
+
+        fun createCircularBitmap(context: Context, originalIcon: android.graphics.drawable.Icon): Bitmap? {
+            val drawable = try {
+                originalIcon.loadDrawable(context)
+            } catch (e: Exception) {
+                null
+            } ?: return null
+
+            val rawBmp = if (drawable is android.graphics.drawable.BitmapDrawable && drawable.bitmap != null) {
+                drawable.bitmap
+            } else {
+                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 144
+                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 144
+                val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bmp)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bmp
+            }
+
+            val minEdge = Math.min(rawBmp.width, rawBmp.height).coerceAtLeast(1)
+            val output = Bitmap.createBitmap(144, 144, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(output)
+            val paint = Paint().apply {
+                isAntiAlias = true
+                isFilterBitmap = true
+            }
+            val destRect = Rect(0, 0, 144, 144)
+
+            canvas.drawARGB(0, 0, 0, 0)
+            canvas.drawCircle(72f, 72f, 72f, paint)
+            paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+
+            val srcRect = Rect(
+                (rawBmp.width - minEdge) / 2,
+                (rawBmp.height - minEdge) / 2,
+                (rawBmp.width + minEdge) / 2,
+                (rawBmp.height + minEdge) / 2
+            )
+            canvas.drawBitmap(rawBmp, srcRect, destRect, paint)
+            return output
+        }
+
+        fun createCircularIcon(context: Context, originalIcon: android.graphics.drawable.Icon): IconCompat {
+            val bitmap = createCircularBitmap(context, originalIcon)
+            return if (bitmap != null) {
+                IconCompat.createWithBitmap(bitmap)
+            } else {
+                IconCompat.createFromIcon(context, originalIcon) ?: IconCompat.createWithBitmap(getAppIconBitmap(context, context.packageName))
+            }
+        }
+
+        fun updateMainBubble(
+            context: Context,
+            pkg: String,
+            pkgId: String,
+            appName: String,
+            title: String,
+            text: String,
+            msgTime: Long,
+            isUpdate: Boolean,
+            isTakeOver: Boolean,
+            originalIntent: PendingIntent?,
+            originalSmallIcon: android.graphics.drawable.Icon?,
+            originalLargeIcon: android.graphics.drawable.Icon? = null,
+            avatarIcon: IconCompat? = null,
+            actions: List<android.app.Notification.Action> = emptyList(),
+            notificationId: Int = MAIN_BUBBLE_NOTIFICATION_ID,
+            shortcutId: String = "bubble_notice_shortcut",
+            filterByPackage: Boolean = false,
+            storeAsPerApp: Boolean = false,
+            suppressNotification: Boolean = false
+        ) {
+            val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
+
+            val icon = avatarIcon ?: if (originalLargeIcon != null) {
+                try {
+                    createCircularIcon(context, originalLargeIcon)
+                } catch (e: Exception) {
+                    IconCompat.createWithBitmap(getAppIconBitmap(context, pkg))
+                }
+            } else {
+                IconCompat.createWithBitmap(getAppIconBitmap(context, pkg))
+            }
+
+            val chatPartner = Person.Builder()
+                .setName(appName)
+                .setIcon(icon)
+                .setImportant(true)
+                .build()
+
+            // 气泡点击意图 / Bubble action intent: open BubbleActivity as the bubble-notice console.
+            val targetIntent = Intent(context, BubbleActivity::class.java).apply {
+                setPackage(context.packageName)
+                if (filterByPackage) {
+                    putExtra("EXTRA_PACKAGE_NAME", pkgId)
+                }
+                putExtra("EXTRA_TITLE", title)
+                putExtra("EXTRA_TEXT", text)
+                putExtra("EXTRA_TIME", msgTime)
+            }
+            val bubbleIntent = PendingIntent.getActivity(
+                context, if (filterByPackage) pkgId.hashCode() else 0, targetIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
+                .setDesiredHeight(600)
+                .setAutoExpandBubble(false) // 不强制自动展开气泡 / Do not force the bubble to expand automatically.
+                .setSuppressNotification(suppressNotification)
+                .build()
+
+            val shortcutIntent = Intent(context, MainActivity::class.java).apply { 
+                action = Intent.ACTION_MAIN 
+                setPackage(context.packageName)
+            }
+            val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
+                .setCategories(setOf("android.shortcut.conversation"))
+                .setIntent(shortcutIntent)
+                .setLongLived(true)
+                .setShortLabel(appName)
+                .setIcon(icon)
+                .setPerson(chatPartner)
+                .build()
+            ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+
+            val style = NotificationCompat.MessagingStyle(chatPartner)
+                .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
+
+            // “打开应用”快捷操作意图，不通过透明 Activity 处理。 / "Open App" action intent, handled without a transparent Activity.
+            val openAppIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
+                putExtra("EXTRA_PACKAGE_NAME", pkgId)
+                putExtra("EXTRA_SENDER_NAME", title)
+                if (originalIntent != null) {
+                    putExtra("EXTRA_ORIGINAL_INTENT", originalIntent)
+                }
+            }
+
+            val openAppPendingIntent = PendingIntent.getBroadcast(
+                context, pkgId.hashCode(), openAppIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val openAppAction = NotificationCompat.Action.Builder(
+                0, context.getString(R.string.action_open_app), openAppPendingIntent
+            ).build()
+
+            val smallIconCompat = originalSmallIcon?.let {
+                try {
+                    IconCompat.createFromIcon(context, it)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            // 通知主体点击意图：正常打开气泡，与点击气泡图标一致；不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈。 / Notification body tap intent: open the bubble normally, the same as tapping the bubble icon. Do not use ACTION_LAUNCH_APP to avoid polluting the bubble task stack.
+            val contentIntent = PendingIntent.getActivity(
+                context, if (filterByPackage) pkgId.hashCode() else 0,
+                Intent(context, BubbleActivity::class.java).apply {
+                    setPackage(context.packageName)
+                    if (filterByPackage) {
+                        putExtra("EXTRA_PACKAGE_NAME", pkgId)
+                    }
+                },
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val builder = NotificationCompat.Builder(context, channelId)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setContentIntent(contentIntent) // 点击通知主体 → 正常打开气泡 / Tap notification body → open bubble normally
+                .setStyle(style)
+                .setBubbleMetadata(bubbleData)        // 绑定气泡入口 / Bind the bubble entry point.
+                .setShortcutId(shortcutId)
+                .addPerson(chatPartner)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
+                .setOnlyAlertOnce(isUpdate) // 更新时保持静默 / Quietly update repeated messages.
+                .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
+
+            actions.forEach { nativeAction ->
+                val actionBuilder = NotificationCompat.Action.Builder(
+                    0, 
+                    nativeAction.title,
+                    nativeAction.actionIntent
+                )
+                val remoteInputs = nativeAction.remoteInputs
+                if (remoteInputs != null) {
+                    for (ri in remoteInputs) {
+                        val compatRi = androidx.core.app.RemoteInput.Builder(ri.resultKey)
+                            .setLabel(ri.label)
+                            .setChoices(ri.choices)
+                            .setAllowFreeFormInput(ri.allowFreeFormInput)
+                            .build()
+                        actionBuilder.addRemoteInput(compatRi)
+                    }
+                }
+                builder.addAction(actionBuilder.build())
+            }
+
+            if (smallIconCompat != null) {
+                builder.setSmallIcon(smallIconCompat)
+            } else {
+                builder.setSmallIcon(R.drawable.ic_notification)
+            }
+
+            val hasExistingNotification = if (storeAsPerApp) {
+                synchronized(perAppStateLock) { activePerAppBubbles.containsKey(pkgId) }
+            } else {
+                synchronized(perAppStateLock) { lastBuilder != null }
+            }
+            if (!isUpdate && hasExistingNotification) {
+                // 如果未开启免打扰且是新消息，先取消旧通知以强制触发横幅弹出。 / Force heads-up by cancelling the old notification when DND is off and this is a new message.
+                cancelOwnNotification(context, notificationId)
+            }
+
+            // 保存气泡数据，以便后续调用 suppressNotificationInShade。 / Save the bubble data for later suppression by suppressNotificationInShade.
+            synchronized(perAppStateLock) {
+                if (storeAsPerApp) {
+                    perAppBubbleData[pkgId] = BubbleState(bubbleIntent, icon, builder)
+                } else {
+                    lastBubbleIntent = bubbleIntent
+                    lastBubbleIcon = icon
+                    lastBuilder = builder
+                }
+            }
+
+            try {
+                NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
+
+        fun updatePerAppBubble(
+            context: Context,
+            pkg: String,
+            pkgId: String,
+            appName: String,
+            title: String,
+            text: String,
+            msgTime: Long,
+            isUpdate: Boolean,
+            isTakeOver: Boolean,
+            originalIntent: PendingIntent?,
+            originalSmallIcon: android.graphics.drawable.Icon?,
+            originalLargeIcon: android.graphics.drawable.Icon? = null,
+            avatarIcon: IconCompat? = null,
+            actions: List<android.app.Notification.Action> = emptyList(),
+            suppressNotification: Boolean = false
+        ) {
+            val notificationId = notificationIdForPackage(pkgId)
+            val shortcutId = shortcutIdForPackage(pkgId)
+
+            updateMainBubble(
+                context = context,
+                pkg = pkg,
+                pkgId = pkgId,
+                appName = appName,
+                title = title,
+                text = text,
+                msgTime = msgTime,
+                isUpdate = isUpdate,
+                isTakeOver = isTakeOver,
+                originalIntent = originalIntent,
+                originalSmallIcon = originalSmallIcon,
+                originalLargeIcon = originalLargeIcon,
+                avatarIcon = avatarIcon,
+                actions = actions,
+                notificationId = notificationId,
+                shortcutId = shortcutId,
+                filterByPackage = true,
+                storeAsPerApp = true,
+                suppressNotification = suppressNotification
+            )
+        }
+
+        fun updateBubbleToLatestRemaining(context: Context, packageId: String? = null) {
+            val isPerAppBubbles = AppUtils.isPerAppBubblesEnabled(context)
+            if (isPerAppBubbles) {
+                if (packageId != null) {
+                    updateSinglePerAppBubbleToLatest(context, packageId)
+                } else {
+                    val activeKeys = synchronized(perAppStateLock) { activePerAppBubbles.keys.toList() }
+                    for (pkg in activeKeys) {
+                        updateSinglePerAppBubbleToLatest(context, pkg)
+                    }
+                }
+            } else {
+                updateMainBubbleToLatest(context)
+            }
+        }
+
+        private fun updateSinglePerAppBubbleToLatest(context: Context, pkgId: String) {
+            val isActive = synchronized(perAppStateLock) {
+                activePerAppBubbles.containsKey(pkgId) && !dismissedPackages.contains(pkgId)
+            }
+            if (!isActive) return
+
+            val latestMsg = UnreadMessageManager.getLatestMessageForPackage(pkgId)
+            val realPkg = pkgId.substringBefore(":")
+            val appName = AppUtils.getAppName(context, pkgId)
+
+            if (latestMsg != null) {
+                val icon = if (latestMsg.avatarBitmap != null) {
+                    IconCompat.createWithBitmap(latestMsg.avatarBitmap)
+                } else {
+                    IconCompat.createWithBitmap(getAppIconBitmap(context, realPkg))
+                }
+                updatePerAppBubble(
+                    context = context,
+                    pkg = realPkg,
+                    pkgId = pkgId,
+                    appName = appName,
+                    title = latestMsg.senderName,
+                    text = latestMsg.messageText,
+                    msgTime = latestMsg.timestamp,
+                    isUpdate = true,
+                    isTakeOver = AppUtils.isTakeOverNotifications(context),
+                    originalIntent = latestMsg.contentIntent,
+                    originalSmallIcon = latestMsg.smallIcon,
+                    avatarIcon = icon,
+                    actions = latestMsg.actions,
+                    suppressNotification = true
+                )
+            } else {
+                if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+                    cancelPerAppBubble(context, pkgId)
+                } else {
+                    val icon = IconCompat.createWithBitmap(getAppIconBitmap(context, realPkg))
+                    updatePerAppBubble(
+                        context = context,
+                        pkg = realPkg,
+                        pkgId = pkgId,
+                        appName = appName,
+                        title = appName,
+                        text = context.getString(R.string.msg_all_caught_up),
+                        msgTime = System.currentTimeMillis(),
+                        isUpdate = true,
+                        isTakeOver = AppUtils.isTakeOverNotifications(context),
+                        originalIntent = null,
+                        originalSmallIcon = null,
+                        avatarIcon = icon,
+                        actions = emptyList(),
+                        suppressNotification = true
+                    )
+                }
+            }
+        }
+
+        private fun updateMainBubbleToLatest(context: Context) {
+            val isMainActive = synchronized(perAppStateLock) {
+                !isBubbleDismissed && lastBuilder != null
+            }
+            if (!isMainActive) return
+
+            val latestMsg = UnreadMessageManager.getLatestMessage()
+            if (latestMsg != null) {
+                val realPkg = latestMsg.packageName.substringBefore(":")
+                val appName = AppUtils.getAppName(context, latestMsg.packageName)
+                val icon = if (latestMsg.avatarBitmap != null) {
+                    IconCompat.createWithBitmap(latestMsg.avatarBitmap)
+                } else {
+                    IconCompat.createWithBitmap(getAppIconBitmap(context, realPkg))
+                }
+                updateMainBubble(
+                    context = context,
+                    pkg = realPkg,
+                    pkgId = latestMsg.packageName,
+                    appName = appName,
+                    title = latestMsg.senderName,
+                    text = latestMsg.messageText,
+                    msgTime = latestMsg.timestamp,
+                    isUpdate = true,
+                    isTakeOver = AppUtils.isTakeOverNotifications(context),
+                    originalIntent = latestMsg.contentIntent,
+                    originalSmallIcon = latestMsg.smallIcon,
+                    avatarIcon = icon,
+                    actions = latestMsg.actions,
+                    suppressNotification = true
+                )
+            } else {
+                if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
+                    cancelMainBubble(context)
+                } else {
+                    val icon = IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
+                    updateMainBubble(
+                        context = context,
+                        pkg = context.packageName,
+                        pkgId = "${context.packageName}:0",
+                        appName = context.getString(R.string.app_name),
+                        title = context.getString(R.string.app_name),
+                        text = context.getString(R.string.msg_all_caught_up),
+                        msgTime = System.currentTimeMillis(),
+                        isUpdate = true,
+                        isTakeOver = AppUtils.isTakeOverNotifications(context),
+                        originalIntent = null,
+                        originalSmallIcon = null,
+                        avatarIcon = icon,
+                        actions = emptyList(),
+                        suppressNotification = true
+                    )
+                }
+            }
+        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -414,6 +886,10 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     }
                 }
 
+                val avatarBitmap = if (originalLargeIcon != null) {
+                    createCircularBitmap(this@BubbleNotificationListenerService, originalLargeIcon)
+                } else null
+
                 val isPerAppBubbles = AppUtils.isPerAppBubblesEnabled(this@BubbleNotificationListenerService)
                 val wasDismissed = if (isPerAppBubbles) {
                     dismissedPackages.contains(pkgId)
@@ -434,7 +910,16 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     packageStateMap[pkgId] = PackageState(title, text, msgTime, styleTime, messageCount)
                     isBubbleDismissed = false
                     dismissedPackages.remove(pkgId)
-                    UnreadMessageManager.addMessage(pkgId, title, text, msgTime, originalIntent, actions)
+                    UnreadMessageManager.addMessage(
+                        pkgId,
+                        title,
+                        text,
+                        msgTime,
+                        originalIntent,
+                        actions,
+                        avatarBitmap,
+                        originalSmallIcon
+                    )
                     
                     if (AppUtils.isAutoJumpEnabled(this@BubbleNotificationListenerService)) {
                         AppUtils.setPendingAutoJump(originalIntent, pkgId, title)
@@ -448,27 +933,61 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                     cancelNotification(sbn.key)
                 }
 
+                val avatarIcon = avatarBitmap?.let { IconCompat.createWithBitmap(it) }
+
                 if (isPerAppBubbles) {
                     var shouldUpdateBubble = false
                     synchronized(perAppStateLock) {
                         val wasActive = activePerAppBubbles.containsKey(pkgId)
                         val maxAllowed = maxPerAppBubbles()
                         if (isNewMessage && !wasActive) {
-                            ensurePerAppBubbleCapacity(maxAllowed)
+                            ensurePerAppBubbleCapacity(this@BubbleNotificationListenerService, maxAllowed)
                             shouldUpdateBubble = maxAllowed > 0
                         } else if (wasActive) {
                             shouldUpdateBubble = maxAllowed > 0
                             if (!shouldUpdateBubble) {
-                                dismissPerAppBubble(pkgId)
+                                cancelPerAppBubbleLocked(this@BubbleNotificationListenerService, pkgId)
                             }
                         }
                         if (shouldUpdateBubble) {
-                            updatePerAppBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
+                            updatePerAppBubble(
+                                context = this@BubbleNotificationListenerService,
+                                pkg = pkg,
+                                pkgId = pkgId,
+                                appName = appName,
+                                title = title,
+                                text = text,
+                                msgTime = msgTime,
+                                isUpdate = shouldBeUpdate,
+                                isTakeOver = isTakeOver,
+                                originalIntent = originalIntent,
+                                originalSmallIcon = originalSmallIcon,
+                                originalLargeIcon = originalLargeIcon,
+                                avatarIcon = avatarIcon,
+                                actions = actions,
+                                suppressNotification = false
+                            )
                             markActivePerAppBubble(pkgId)
                         }
                     }
                 } else {
-                    updateMainBubble(pkg, pkgId, appName, title, text, msgTime, isUpdate = shouldBeUpdate, isTakeOver = isTakeOver, originalIntent = originalIntent, originalSmallIcon = originalSmallIcon, originalLargeIcon = originalLargeIcon, actions = actions)
+                    updateMainBubble(
+                        context = this@BubbleNotificationListenerService,
+                        pkg = pkg,
+                        pkgId = pkgId,
+                        appName = appName,
+                        title = title,
+                        text = text,
+                        msgTime = msgTime,
+                        isUpdate = shouldBeUpdate,
+                        isTakeOver = isTakeOver,
+                        originalIntent = originalIntent,
+                        originalSmallIcon = originalSmallIcon,
+                        originalLargeIcon = originalLargeIcon,
+                        avatarIcon = avatarIcon,
+                        actions = actions,
+                        suppressNotification = false
+                    )
                 }
             }
         }
@@ -530,313 +1049,6 @@ class BubbleNotificationListenerService : NotificationListenerService() {
     }
 
 
-    private fun createCircularIcon(context: android.content.Context, originalIcon: android.graphics.drawable.Icon): androidx.core.graphics.drawable.IconCompat {
-        val drawable = originalIcon.loadDrawable(context)
-            ?: return androidx.core.graphics.drawable.IconCompat.createFromIcon(context, originalIcon)!!
-        
-        var bitmap = if (drawable is android.graphics.drawable.BitmapDrawable) {
-            drawable.bitmap
-        } else {
-            val bmp = android.graphics.Bitmap.createBitmap(Math.max(drawable.intrinsicWidth, 144), Math.max(drawable.intrinsicHeight, 144), android.graphics.Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bmp)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            drawable.draw(canvas)
-            bmp
-        }
-
-        val size = Math.min(bitmap.width, bitmap.height)
-        val output = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(output)
-        val paint = android.graphics.Paint().apply {
-            isAntiAlias = true
-        }
-        val rect = android.graphics.Rect(0, 0, size, size)
-        val rectF = android.graphics.RectF(rect)
-
-        canvas.drawARGB(0, 0, 0, 0)
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
-        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
-        
-        // 居中裁剪 / Center crop.
-        val srcRect = android.graphics.Rect(
-            (bitmap.width - size) / 2,
-            (bitmap.height - size) / 2,
-            (bitmap.width + size) / 2,
-            (bitmap.height + size) / 2
-        )
-        canvas.drawBitmap(bitmap, srcRect, rect, paint)
-
-        return androidx.core.graphics.drawable.IconCompat.createWithBitmap(output)
-    }
-
-    private fun updateMainBubble(
-        pkg: String,
-        pkgId: String,
-        appName: String,
-        title: String,
-        text: String,
-        msgTime: Long,
-        isUpdate: Boolean,
-        isTakeOver: Boolean,
-        originalIntent: PendingIntent?,
-        originalSmallIcon: android.graphics.drawable.Icon?,
-        originalLargeIcon: android.graphics.drawable.Icon? = null,
-        actions: List<android.app.Notification.Action> = emptyList(),
-        notificationId: Int = MAIN_BUBBLE_NOTIFICATION_ID,
-        shortcutId: String = "bubble_notice_shortcut",
-        filterByPackage: Boolean = false,
-        storeAsPerApp: Boolean = false
-    ) {
-        val channelId = AppUtils.BUBBLE_CHANNEL_ALERT_ID
-
-        val icon = if (originalLargeIcon != null) {
-            try {
-                createCircularIcon(this, originalLargeIcon)
-            } catch (e: Exception) {
-                // 转换失败时回退到应用图标 / Fall back to the app icon when conversion fails.
-                val appIconDrawable = try {
-                    packageManager.getApplicationIcon(pkg)
-                } catch (ex: Exception) {
-                    androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)!!
-                }
-                IconCompat.createWithBitmap(appIconDrawable.toBitmap(144, 144))
-            }
-        } else {
-            val appIconDrawable = try {
-                packageManager.getApplicationIcon(pkg)
-            } catch (e: Exception) {
-                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)!!
-            }
-            IconCompat.createWithBitmap(appIconDrawable.toBitmap(144, 144))
-        }
-
-        val chatPartner = Person.Builder()
-            .setName(appName)
-            .setIcon(icon)
-            .setImportant(true)
-            .build()
-
-        // 气泡点击意图 / Bubble action intent: open BubbleActivity as the bubble-notice console.
-        val targetIntent = Intent(this, BubbleActivity::class.java).apply {
-            setPackage(packageName)
-            if (filterByPackage) {
-                putExtra("EXTRA_PACKAGE_NAME", pkgId)
-            }
-            putExtra("EXTRA_TITLE", title)
-            putExtra("EXTRA_TEXT", text)
-            putExtra("EXTRA_TIME", msgTime)
-        }
-        val bubbleIntent = PendingIntent.getActivity(
-            this, if (filterByPackage) pkgId.hashCode() else 0, targetIntent,
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
-            .setDesiredHeight(600)
-            .setAutoExpandBubble(false) // 不强制自动展开气泡 / Do not force the bubble to expand automatically.
-            .setSuppressNotification(false) // 确保不抑制通知显示 / Ensure notification is not suppressed.
-            .build()
-
-        val shortcutIntent = Intent(this, MainActivity::class.java).apply { 
-            action = Intent.ACTION_MAIN 
-            setPackage(packageName)
-        }
-        val shortcut = ShortcutInfoCompat.Builder(this, shortcutId)
-            .setCategories(setOf("android.shortcut.conversation"))
-            .setIntent(shortcutIntent)
-            .setLongLived(true)
-            .setShortLabel(appName)
-            .setIcon(icon)
-            .setPerson(chatPartner)
-            .build()
-        ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
-
-        val style = NotificationCompat.MessagingStyle(chatPartner)
-            .addMessage("$title: $text", System.currentTimeMillis(), chatPartner)
-
-        // “打开应用”快捷操作意图，不通过透明 Activity 处理。 / "Open App" action intent, handled without a transparent Activity.
-        val openAppIntent = Intent(this, NotificationActionReceiver::class.java).apply {
-            action = "io.github.gracethings.bubblenotice.ACTION_LAUNCH_APP"
-            putExtra("EXTRA_PACKAGE_NAME", pkgId)
-            putExtra("EXTRA_SENDER_NAME", title)
-            if (originalIntent != null) {
-                putExtra("EXTRA_ORIGINAL_INTENT", originalIntent)
-            }
-        }
-
-        val openAppPendingIntent = PendingIntent.getBroadcast(
-            this, pkgId.hashCode(), openAppIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val openAppAction = NotificationCompat.Action.Builder(
-            0, getString(R.string.action_open_app), openAppPendingIntent
-        ).build()
-
-        val smallIconCompat = originalSmallIcon?.let {
-            try {
-                IconCompat.createFromIcon(this, it)
-            } catch (e: Exception) {
-                null
-            }
-        }
-
-        // 通知主体点击意图：正常打开气泡，与点击气泡图标一致；不使用 ACTION_LAUNCH_APP，避免污染气泡任务栈。 / Notification body tap intent: open the bubble normally, the same as tapping the bubble icon. Do not use ACTION_LAUNCH_APP to avoid polluting the bubble task stack.
-        val contentIntent = PendingIntent.getActivity(
-            this, if (filterByPackage) pkgId.hashCode() else 0,
-            Intent(this, BubbleActivity::class.java).apply {
-                setPackage(packageName)
-                if (filterByPackage) {
-                    putExtra("EXTRA_PACKAGE_NAME", pkgId)
-                }
-            },
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val builder = NotificationCompat.Builder(this, channelId)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setContentIntent(contentIntent) // 点击通知主体 → 正常打开气泡 / Tap notification body → open bubble normally
-            .setStyle(style)
-            .setBubbleMetadata(bubbleData)        // 绑定气泡入口 / Bind the bubble entry point.
-            .setShortcutId(shortcutId)
-            .addPerson(chatPartner)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // 设置高优先级以便弹出文本 / High priority for heads-up notification.
-            .setOnlyAlertOnce(isUpdate) // 更新时保持静默 / Quietly update repeated messages.
-            .addAction(openAppAction)   // 提供明确的打开应用按钮 / Provide explicit button to bypass bubble expansion.
-
-        actions.forEach { nativeAction ->
-            val actionBuilder = NotificationCompat.Action.Builder(
-                0, 
-                nativeAction.title,
-                nativeAction.actionIntent
-            )
-            val remoteInputs = nativeAction.remoteInputs
-            if (remoteInputs != null) {
-                for (ri in remoteInputs) {
-                    val compatRi = androidx.core.app.RemoteInput.Builder(ri.resultKey)
-                        .setLabel(ri.label)
-                        .setChoices(ri.choices)
-                        .setAllowFreeFormInput(ri.allowFreeFormInput)
-                        .build()
-                    actionBuilder.addRemoteInput(compatRi)
-                }
-            }
-            builder.addAction(actionBuilder.build())
-        }
-
-        if (smallIconCompat != null) {
-            builder.setSmallIcon(smallIconCompat)
-        } else {
-            builder.setSmallIcon(R.drawable.ic_notification)
-        }
-
-        val hasExistingNotification = if (storeAsPerApp) {
-            activePerAppBubbles.containsKey(pkgId)
-        } else {
-            lastBuilder != null
-        }
-        if (!isUpdate && hasExistingNotification) {
-            // 如果未开启免打扰且是新消息，先取消旧通知以强制触发横幅弹出。 / Force heads-up by cancelling the old notification when DND is off and this is a new message.
-            cancelOwnNotification(this, notificationId)
-        }
-
-        // 保存气泡数据，以便后续调用 suppressNotificationInShade。 / Save the bubble data for later suppression by suppressNotificationInShade.
-        if (storeAsPerApp) {
-            perAppBubbleData[pkgId] = BubbleState(bubbleIntent, icon, builder)
-        } else {
-            lastBubbleIntent = bubbleIntent
-            lastBubbleIcon = icon
-            lastBuilder = builder
-        }
-
-        try {
-            NotificationManagerCompat.from(this).notify(notificationId, builder.build())
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun updatePerAppBubble(
-        pkg: String,
-        pkgId: String,
-        appName: String,
-        title: String,
-        text: String,
-        msgTime: Long,
-        isUpdate: Boolean,
-        isTakeOver: Boolean,
-        originalIntent: PendingIntent?,
-        originalSmallIcon: android.graphics.drawable.Icon?,
-        originalLargeIcon: android.graphics.drawable.Icon? = null,
-        actions: List<android.app.Notification.Action> = emptyList()
-    ) {
-        val notificationId = notificationIdForPackage(pkgId)
-        val shortcutId = shortcutIdForPackage(pkgId)
-
-        updateMainBubble(
-            pkg = pkg,
-            pkgId = pkgId,
-            appName = appName,
-            title = title,
-            text = text,
-            msgTime = msgTime,
-            isUpdate = isUpdate,
-            isTakeOver = isTakeOver,
-            originalIntent = originalIntent,
-            originalSmallIcon = originalSmallIcon,
-            originalLargeIcon = originalLargeIcon,
-            actions = actions,
-            notificationId = notificationId,
-            shortcutId = shortcutId,
-            filterByPackage = true,
-            storeAsPerApp = true
-        )
-    }
-
-    private fun notificationIdForPackage(pkgId: String): Int {
-        perAppNotificationIds[pkgId]?.let { return it }
-
-        var candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE +
-                (pkgId.hashCode() and Int.MAX_VALUE) % PER_APP_BUBBLE_NOTIFICATION_ID_RANGE
-        while (notificationIdToPackage.containsKey(candidate)) {
-            candidate += 1
-            if (candidate >= PER_APP_BUBBLE_NOTIFICATION_ID_BASE + PER_APP_BUBBLE_NOTIFICATION_ID_RANGE) {
-                candidate = PER_APP_BUBBLE_NOTIFICATION_ID_BASE
-            }
-        }
-
-        perAppNotificationIds[pkgId] = candidate
-        notificationIdToPackage[candidate] = pkgId
-        return candidate
-    }
-
-    private fun shortcutIdForPackage(pkgId: String): String {
-        perAppShortcutIds[pkgId]?.let { return it }
-
-        val sanitized = pkgId.map { char ->
-            if (char.isLetterOrDigit() || char == '_') char else '_'
-        }.joinToString("")
-        val shortcutId = "bubble_notice_$sanitized"
-        perAppShortcutIds[pkgId] = shortcutId
-        return shortcutId
-    }
-
-    private fun markActivePerAppBubble(pkgId: String) {
-        activePerAppBubbles.remove(pkgId)
-        activePerAppBubbles[pkgId] = System.currentTimeMillis()
-    }
-
-    private fun ensurePerAppBubbleCapacity(maxAllowed: Int) {
-        while (activePerAppBubbles.isNotEmpty() && activePerAppBubbles.size >= maxAllowed) {
-            val evictedPkgId = activePerAppBubbles.keys.firstOrNull { pkgId ->
-                !UnreadMessageManager.hasMessagesForPackage(pkgId)
-            } ?: activePerAppBubbles.keys.first()
-            dismissPerAppBubble(evictedPkgId)
-        }
-    }
-
     private fun reconcilePerAppBubbleCapacity() {
         synchronized(perAppStateLock) {
             val maxAllowed = maxPerAppBubbles()
@@ -844,7 +1056,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 val evictedPkgId = activePerAppBubbles.keys.firstOrNull { pkgId ->
                     !UnreadMessageManager.hasMessagesForPackage(pkgId)
                 } ?: activePerAppBubbles.keys.first()
-                dismissPerAppBubble(evictedPkgId)
+                cancelPerAppBubbleLocked(this@BubbleNotificationListenerService, evictedPkgId)
             }
         }
     }
@@ -859,26 +1071,6 @@ class BubbleNotificationListenerService : NotificationListenerService() {
         }
         return (TOTAL_BUBBLE_BUDGET - otherBubbleCount - RESERVED_BUBBLE_SLOTS_FOR_OTHER_APPS)
             .coerceAtLeast(MIN_PER_APP_BUBBLES)
-    }
-
-    private fun dismissPerAppBubble(pkgId: String) {
-        val notificationId = perAppNotificationIds.remove(pkgId)
-        val shortcutId = perAppShortcutIds.remove(pkgId)
-
-        activePerAppBubbles.remove(pkgId)
-        perAppBubbleData.remove(pkgId)
-        if (notificationId != null) {
-            notificationIdToPackage.remove(notificationId)
-            cancelOwnNotification(this, notificationId)
-        }
-
-        if (shortcutId != null) {
-            try {
-                ShortcutManagerCompat.removeDynamicShortcuts(this, listOf(shortcutId))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
     }
 }
 

@@ -34,7 +34,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     UnreadMessageManager.clearMessagesForPackage(pkg)
                 }
                 BubbleNotificationListenerService.suppressNotificationInShade(context, pkg)
-                BubbleNotificationListenerService.autoCloseBubbleIfEmpty(context, pkg)
+                val closed = BubbleNotificationListenerService.autoCloseBubbleIfEmpty(context, pkg)
+                if (!closed) {
+                    BubbleNotificationListenerService.updateBubbleToLatestRemaining(context, pkg)
+                }
 
                 val pendingResult = goAsync()
                 val appContext = context.applicationContext

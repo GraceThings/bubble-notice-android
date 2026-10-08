@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
     alias(libs.plugins.android.application)
     
     alias(libs.plugins.kotlin.compose)
@@ -79,5 +79,5 @@ dependencies {
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
 
-
+    testImplementation("junit:junit:4.13.2")
 }
