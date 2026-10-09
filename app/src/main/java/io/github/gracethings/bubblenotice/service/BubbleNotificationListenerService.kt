@@ -754,7 +754,7 @@ class BubbleNotificationListenerService : NotificationListenerService() {
                 if (AppUtils.isCloseBubbleAfterClearEnabled(context)) {
                     cancelMainBubble(context)
                 } else {
-                    val icon = IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
+                    val icon = IconCompat.createWithBitmap(getAppIconBitmap(context, context.packageName))
                     updateMainBubble(
                         context = context,
                         pkg = context.packageName,

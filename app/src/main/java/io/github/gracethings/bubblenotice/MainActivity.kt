@@ -50,6 +50,7 @@ import androidx.core.app.Person
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.platform.LocalContext
 import io.github.gracethings.bubblenotice.ui.screen.AboutScreen
 import io.github.gracethings.bubblenotice.ui.screen.AppearanceScreen
@@ -92,7 +93,12 @@ class MainActivity : ComponentActivity() {
                 android.app.PendingIntent.FLAG_MUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
             )
 
-            val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(context, R.drawable.ic_launcher_foreground)
+            val iconBitmap = try {
+                context.packageManager.getApplicationIcon(context.packageName).toBitmap(144, 144)
+            } catch (e: Exception) {
+                androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_launcher_foreground)!!.toBitmap(144, 144)
+            }
+            val icon = androidx.core.graphics.drawable.IconCompat.createWithBitmap(iconBitmap)
             val chatPartner = androidx.core.app.Person.Builder()
                 .setName(context.getString(R.string.notif_partner_name))
                 .setIcon(icon)
