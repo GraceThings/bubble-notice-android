@@ -1,0 +1,6 @@
+<ul>
+<li>Support contact avatars on bubbles and dynamically switch to the latest remaining sender.</li>
+<li>Add swipe-to-dismiss gesture for unread message cards with haptic vibration feedback.</li>
+<li>Add an interactive delete button during card swipe with undo support when swiping back.</li>
+<li>Refine auto-close logic to prevent empty bubbles from closing prematurely on launch.</li>
+</ul>
