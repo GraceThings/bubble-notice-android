@@ -174,21 +174,6 @@ class BubbleActivity : ComponentActivity() {
                                 io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService.suppressNotificationInShade(this@BubbleActivity, packageFilter.value)
                                 selectedTab = if (UnreadMessageManager.messagesFlow.value.isEmpty()) 1 else 0
 
-                                val expandedPackageId = packageFilter.value
-                                val expandedIsEmpty = if (expandedPackageId != null) {
-                                    !UnreadMessageManager.hasMessagesForPackage(expandedPackageId)
-                                } else {
-                                    UnreadMessageManager.messagesFlow.value.isEmpty()
-                                }
-                                if (expandedIsEmpty &&
-                                    AppUtils.isCloseBubbleAfterClearEnabled(this@BubbleActivity)
-                                ) {
-                                    io.github.gracethings.bubblenotice.service
-                                        .BubbleNotificationListenerService
-                                        .closeAfterActivityCleared(this@BubbleActivity, expandedPackageId)
-                                    this@BubbleActivity.finish()
-                                }
-                                
                                 val pendingData = AppUtils.consumePendingAutoJump(packageFilter.value)
                                 if (pendingData != null) {
                                     val pendingIntent = pendingData.first
