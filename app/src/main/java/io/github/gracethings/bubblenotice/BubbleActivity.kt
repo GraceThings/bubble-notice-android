@@ -122,6 +122,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
+import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalView
 
 data class SenderGroup(
     val packageName: String,
@@ -366,20 +372,23 @@ class BubbleActivity : ComponentActivity() {
 
     private fun closeBubbleIfEmptyAfterActivity(
         context: Context,
-        packageFilter: String?
+        packageFilter: String?,
+        targetPackage: String? = null
     ) {
-        val remainingMessages = if (packageFilter != null) {
-            UnreadMessageManager.hasMessagesForPackage(packageFilter)
+        val isPerApp = AppUtils.isPerAppBubblesEnabled(context)
+        val filter = if (isPerApp) (packageFilter ?: targetPackage) else packageFilter
+        val remainingMessages = if (filter != null) {
+            UnreadMessageManager.hasMessagesForPackage(filter)
         } else {
             UnreadMessageManager.messagesFlow.value.isNotEmpty()
         }
         if (remainingMessages || !AppUtils.isCloseBubbleAfterClearEnabled(context)) {
             io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
-                .updateBubbleToLatestRemaining(context.applicationContext, packageFilter)
+                .updateBubbleToLatestRemaining(context.applicationContext, filter)
             return
         }
         io.github.gracethings.bubblenotice.service.BubbleNotificationListenerService
-            .closeAfterActivityCleared(context, packageFilter)
+            .closeAfterActivityCleared(context, filter)
         (context as? android.app.Activity)?.finish()
     }
 
@@ -475,98 +484,183 @@ class BubbleActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    private fun triggerThresholdHaptic(
+        context: Context,
+        view: android.view.View,
+        haptic: androidx.compose.ui.hapticfeedback.HapticFeedback
+    ) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+                    vm?.defaultVibrator
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+                }
+                if (vibrator != null && vibrator.hasVibrator()) {
+                    vibrator.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
+                    return
+                }
+            }
+        } catch (_: Throwable) {}
+
+        try {
+            val constant = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                android.view.HapticFeedbackConstants.CONFIRM
+            } else {
+                android.view.HapticFeedbackConstants.KEYBOARD_TAP
+            }
+            if (view.performHapticFeedback(constant)) {
+                return
+            }
+        } catch (_: Throwable) {}
+
+        try {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+        } catch (_: Throwable) {}
+    }
+
     @Composable
     private fun MessageGroupCard(group: SenderGroup, shape: RoundedCornerShape, modifier: Modifier = Modifier) {
         val context = LocalContext.current
+        val view = LocalView.current
+        val haptic = LocalHapticFeedback.current
+        val density = LocalDensity.current
+        val coroutineScope = rememberCoroutineScope()
         var expanded by remember { mutableStateOf(false) }
         val visibleMessages = if (expanded) group.messages else group.messages.take(3)
-        val haptic = LocalHapticFeedback.current
 
-        val dismissState = rememberSwipeToDismissBoxState()
+        var currentOffset by remember(group.packageName, group.senderName) { mutableFloatStateOf(0f) }
+        var isPastThreshold by remember(group.packageName, group.senderName) { mutableStateOf(false) }
+        var isDeleting by remember(group.packageName, group.senderName) { mutableStateOf(false) }
+        var cardWidthPx by remember { mutableFloatStateOf(1000f) }
+        val thresholdPx = with(density) { 96.dp.toPx() }
 
-        LaunchedEffect(dismissState.currentValue) {
-            if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
-            ) {
-                UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
-                closeBubbleIfEmptyAfterActivity(context, packageFilter.value ?: group.packageName)
+        val draggableState = rememberDraggableState { delta ->
+            if (!isDeleting) {
+                val newOffset = (currentOffset + delta).coerceAtMost(0f)
+                currentOffset = newOffset
+                val nowPast = -newOffset >= thresholdPx
+                if (nowPast != isPastThreshold) {
+                    isPastThreshold = nowPast
+                    triggerThresholdHaptic(context, view, haptic)
+                }
             }
         }
 
-        val isActivated = dismissState.targetValue != SwipeToDismissBoxValue.Settled
-        LaunchedEffect(isActivated) {
-            if (isActivated) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            }
-        }
+        val dragDistance = -currentOffset
+        val progress = (dragDistance / thresholdPx).coerceIn(0f, 1f)
 
-        SwipeToDismissBox(
-            state = dismissState,
+        val buttonColor by animateColorAsState(
+            targetValue = if (isPastThreshold) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.errorContainer
+            },
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "buttonColor"
+        )
+
+        val iconTint by animateColorAsState(
+            targetValue = if (isPastThreshold) {
+                MaterialTheme.colorScheme.onError
+            } else {
+                MaterialTheme.colorScheme.onErrorContainer
+            },
+            animationSpec = spring(stiffness = Spring.StiffnessMedium),
+            label = "iconTint"
+        )
+
+        val iconScale by animateFloatAsState(
+            targetValue = if (isPastThreshold) 1.2f else (0.85f + progress * 0.15f),
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "iconScale"
+        )
+
+        val revealedWidth = with(density) { dragDistance.toDp() }
+        val iconPaddingEnd = with(density) { minOf(dragDistance / 2f, 28.dp.toPx()).toDp() }
+        val iconAlpha = (progress * 2.5f).coerceIn(0f, 1f)
+
+        Box(
             modifier = modifier
                 .fillMaxWidth()
-                .clip(shape),
-            enableDismissFromStartToEnd = true,
-            enableDismissFromEndToStart = true,
-            backgroundContent = {
-                val direction = dismissState.dismissDirection
-                val alignment = when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                    SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                    SwipeToDismissBoxValue.Settled -> Alignment.CenterEnd
-                }
-
-                val backgroundColor by animateColorAsState(
-                    targetValue = if (isActivated) {
-                        MaterialTheme.colorScheme.errorContainer
-                    } else {
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
-                    },
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    label = "swipeBgColor"
-                )
-
-                val iconScale by animateFloatAsState(
-                    targetValue = if (isActivated) 1.25f else 0.9f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMediumLow
-                    ),
-                    label = "swipeIconScale"
-                )
-
-                val iconAlpha by animateFloatAsState(
-                    targetValue = if (direction != SwipeToDismissBoxValue.Settled) 1f else 0.5f,
-                    animationSpec = spring(stiffness = Spring.StiffnessMedium),
-                    label = "swipeIconAlpha"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(horizontal = 24.dp),
-                    contentAlignment = alignment
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = stringResource(R.string.btn_clear),
-                        tint = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = iconAlpha),
+                .clip(shape)
+                .onSizeChanged { cardWidthPx = it.width.toFloat() }
+        ) {
+            // 背景层：matchParentSize 保证与卡片 100% 等高，且为紧贴卡片的圆角矩形按键 / Background layer: exact height via matchParentSize, flush rounded rectangle button.
+            Box(
+                modifier = Modifier.matchParentSize()
+            ) {
+                if (dragDistance > 0f) {
+                    Box(
                         modifier = Modifier
-                            .scale(iconScale)
-                            .size(28.dp)
-                    )
+                            .width(revealedWidth)
+                            .fillMaxHeight()
+                            .align(Alignment.CenterEnd)
+                            .background(
+                                color = buttonColor,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(end = iconPaddingEnd),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteSweep,
+                            contentDescription = stringResource(R.string.btn_clear),
+                            tint = iconTint.copy(alpha = iconAlpha),
+                            modifier = Modifier
+                                .scale(iconScale)
+                                .size(26.dp)
+                        )
+                    }
                 }
             }
-        ) {
+
             // 前台内容 / Foreground content.
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .offset { IntOffset(currentOffset.roundToInt(), 0) }
+                    .draggable(
+                        state = draggableState,
+                        orientation = Orientation.Horizontal,
+                        enabled = !isDeleting,
+                        onDragStopped = {
+                            if (isDeleting) return@draggable
+                            coroutineScope.launch {
+                                if (isPastThreshold) {
+                                    isDeleting = true
+                                    androidx.compose.animation.core.Animatable(currentOffset).animateTo(
+                                        targetValue = -cardWidthPx,
+                                        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                                    ) {
+                                        currentOffset = value
+                                    }
+                                    UnreadMessageManager.clearMessagesForSender(group.packageName, group.senderName)
+                                    closeBubbleIfEmptyAfterActivity(context, packageFilter.value, group.packageName)
+                                } else {
+                                    androidx.compose.animation.core.Animatable(currentOffset).animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+                                    ) {
+                                        currentOffset = value
+                                    }
+                                }
+                            }
+                        }
+                    )
                     .clickable {
+                        if (kotlin.math.abs(currentOffset) > 10f || isDeleting) return@clickable
                         val pendingIntent = group.messages.firstOrNull()?.contentIntent
                         val sentOriginalIntent = sendNotificationTargetIntent(
                             context,
@@ -827,7 +921,8 @@ class BubbleActivity : ComponentActivity() {
                 }
             }
         }
-    }    }
+    }
+}
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
